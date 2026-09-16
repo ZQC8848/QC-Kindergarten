@@ -72,6 +72,7 @@ All rows below were approved by QC on 2026-09-09; reusable terms are in the glos
 | 软软发呆时的眼神，不像在害怕，像在加速。 | When Ruanruan stares into space, she doesn't look scared. She looks like she's accelerating. | 两句，最后一个词落在 accelerating。 | | 艾莎 / 软软 bible | approved |
 | 变回去还得穿裤子。 | （事件档案，未翻译） | 事件档案章节不在网页渲染，本次未翻。 | | Haide / 点儿 / Liiie / QC bible 的 Archive 章节 | 未翻 |
 | peace and love | keep the peace and love | 原文就是英文，保留。 | | Mimi bible | approved |
+| 陆姚刺猹 / 猹 | Luyao and the Zha / zha | 猹是鲁迅自造的字，谁也说不清是什么动物，英文音译保留这份含糊；标题不用"stabs"，把动作留给正文。 | Luyao Stabs the Zha（直译，剧透动作）；badger（把含糊说死了） | luyao-stabs-zha.en.md | pending |
 
 ### Deliberately not translated
 
