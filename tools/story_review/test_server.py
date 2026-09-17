@@ -29,6 +29,7 @@ import translate as translate_mod  # noqa: E402
 NOW ='2026-09-10T12:00:00+08:00'
 ROUND = '2026-09-10-r01'
 MODELS = tuple(run_round.ADAPTERS)
+LENS_IDS = list(dict.fromkeys(lid for cond in run_round.LENS_EXPERIMENT for lid in cond.split('+')))
 
 
 class FakeGoogle:
@@ -56,6 +57,12 @@ class Base(unittest.TestCase):
         self._saved_dir = store.CANDIDATES
         self._saved_call = run_round.call
         store.CANDIDATES = Path(self._tmp.name)
+        # Two draft writing cards, so no test reads the private submodule's real ones.
+        self._lens_tmp = tempfile.TemporaryDirectory()
+        self._saved_lens_dir = server.brief_mod.LENS_DIR
+        server.brief_mod.LENS_DIR = Path(self._lens_tmp.name)
+        for lid in LENS_IDS:
+            self.lens_card(lid, 'draft')
         self.google = FakeGoogle()
         # Background work runs inline, so every effect is visible when the call returns.
         self.review = server.Review(dry=True, start_thread=lambda fn: fn(), translator=fake_translator(self.google))
@@ -63,7 +70,14 @@ class Base(unittest.TestCase):
     def tearDown(self):
         run_round.call = self._saved_call
         store.CANDIDATES = self._saved_dir
+        server.brief_mod.LENS_DIR = self._saved_lens_dir
+        self._lens_tmp.cleanup()
         self._tmp.cleanup()
+
+    def lens_card(self, lid: str, status: str) -> None:
+        (server.brief_mod.LENS_DIR / f'{lid}.md').write_text(
+            f'---\nid: {lid}\nname: 卡 {lid}\nname_en: Card {lid}\nstatus: {status}\n---\n\n方法正文 {lid}。\n',
+            encoding='utf-8')
 
     def make(self, **kw) -> store.Candidate:
         c = store.Candidate(
@@ -139,10 +153,19 @@ class Verdicts(Base):
             back = store.find(c.id)
             self.assertEqual((back.verdict, back.score), (want, score))
 
-    def test_a_discard_or_a_shortlist_must_say_why_in_words(self):
+    def test_a_discard_needs_a_reason_or_words_and_a_reason_alone_is_enough(self):
         c = self.make()
-        self.refused(self.review.verdict, {'id': c.id, 'score': 1, 'reasons': ['bland']}, 400)
+        self.refused(self.review.verdict, {'id': c.id, 'score': 1}, 400)
+        self.refused(self.review.verdict, {'id': c.id, 'score': 1, 'notes': '   ', 'reasons': []}, 400)
+        self.assertEqual(store.find(c.id).verdict, 'pending')
+        out = self.review.verdict({'id': c.id, 'score': 1, 'reasons': ['bland']})
+        back = store.find(c.id)
+        self.assertEqual((out['verdict'], back.reasons, back.notes), ('discarded', ['bland'], None))
+
+    def test_a_shortlist_still_needs_words(self):
+        c = self.make()
         self.refused(self.review.verdict, {'id': c.id, 'score': 5, 'notes': '   '}, 400)
+        self.refused(self.review.verdict, {'id': c.id, 'score': 5, 'reasons': ['bland']}, 400)
         self.assertEqual(store.find(c.id).verdict, 'pending')
 
     def test_a_discard_keeps_every_reason_ticked(self):
@@ -250,6 +273,44 @@ class Generate(Base):
             self.assertNotIn(m, log)
 
 
+class WritingCards(Base):
+    def test_the_card_a_story_drew_stays_off_the_page_until_the_round_is_judged(self):
+        self.assertTrue(self.review.lens_options()['ready'])   # drafts are fine in a dry run
+        self.review.generate({'min_chars': 120, 'max_chars': 160, 'lenses': True})
+        job = self.review.job
+        self.assertIsNone(job['error'])
+        cands = store.load_round(job['round'])
+        self.assertTrue(cands and all(c.lens for c in cands))
+        st = self.review.state()
+        page = json.dumps([st['candidates'], st['job'], st['rounds'], st['rewrites']], ensure_ascii=False)
+        for c in st['candidates']:
+            self.assertNotIn('lens', c)
+        for c in cands:
+            self.assertNotIn(c.lens, page) if c.lens != 'none' else None
+        self.refused(self.review.stats, job['round'], 409)
+        for c in cands:
+            store.decide(c, 'discarded', reasons=['bland'], score=1, now=NOW)
+        stats = self.review.stats(job['round'])
+        self.assertEqual(set(stats['lenses']), set(run_round.LENS_EXPERIMENT))
+        first = LENS_IDS[0]
+        self.assertEqual(stats['lens_names'][first], {'zh': f'卡 {first}', 'en': f'Card {first}'})
+
+    def test_a_live_session_rotates_only_approved_cards(self):
+        live = server.Review(dry=False, start_thread=lambda fn: fn(), translator=fake_translator(self.google))
+        opts = live.lens_options()
+        self.assertEqual((opts['ready'], opts['drafts'], opts['missing']), (False, LENS_IDS, []))
+        self.refused(live.generate, {'min_chars': 120, 'max_chars': 160, 'lenses': True}, 409)
+        self.refused(live.generate, {'min_chars': 120, 'max_chars': 160, 'lenses': 'yes'}, 400)
+        self.assertEqual(list(store.CANDIDATES.iterdir()), [])
+        for lid in LENS_IDS:
+            self.lens_card(lid, 'approved')
+        self.assertTrue(live.lens_options()['ready'])
+        (server.brief_mod.LENS_DIR / f'{LENS_IDS[-1]}.md').unlink()
+        opts = self.review.lens_options()
+        self.assertEqual((opts['ready'], opts['missing']), (False, [LENS_IDS[-1]]))
+        self.refused(self.review.generate, {'min_chars': 120, 'max_chars': 160, 'lenses': True}, 409)
+
+
 class Translation(unittest.TestCase):
     def test_names_are_fenced_and_come_back_as_the_website_spells_them(self):
         sent = translate_mod.protect('陆姚和牧师<吵架>&\n第二行', {'陆姚': 'Luyao', '牧师': 'Mushi'})
@@ -355,6 +416,14 @@ class TastePage(Base):
             self.assertTrue(p['texts']['en'] and p['texts']['zh'], p['key'])
             self.assertIn(p['state'], taste_sync.STATE_TEXT)
             self.assertEqual(set(p['title']), {'zh', 'en'})
+
+
+class FormatsInState(Base):
+    def test_each_candidate_can_find_the_fields_of_its_own_format(self):
+        st = self.review.state()
+        self.assertIn('stands_beside', [f['key'] for f in st['formats']['default@v1']])
+        current = st['format']
+        self.assertIn(f"{current['name']}@{current['version']}", st['formats'])
 
 
 class Http(Base):

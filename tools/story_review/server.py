@@ -14,8 +14,8 @@ What it guarantees, and where:
   served only once a round has nothing pending (Review.stats). review.py enforces the same
   rule in the terminal.
 - One set of rules. Verdicts go through store.decide, rewrites through rewrite.run, rounds
-  through run_round.run. The site adds one rule of its own, from QC: a discard or a
-  shortlist must say why in the text box.
+  through run_round.run. The site adds one rule of its own, from QC: a shortlist must say
+  in words what works and what is missing, because the rewrite is made from those notes.
 - The score decides the destination (store.SCORE_BANDS). Selected with notes is rewritten
   at once by the same model and lands in the same round for approval. Shortlisted stories
   are rewritten only when the next round is generated.
@@ -82,9 +82,10 @@ ROUND_RE = re.compile(r'^[\w.-]{1,64}$')
 # Reasons the system writes. They are never QC's judgement, so they are not offered as chips.
 SYSTEM_REASONS = {'never_chosen', 'generation_failed', 'superseded'}
 
-# The only candidate fields the browser ever receives. `model`, `taste_context` and `raw`
-# are left out on purpose: the first is what blind review hides, the second is the hidden
-# arm of the ablation, and the third can quote a model's own chatter.
+# The only candidate fields the browser ever receives. `model`, `taste_context`, `lens` and
+# `raw` are left out on purpose: the first is what blind review hides, the next two are hidden
+# arms of an experiment (the taste ablation, the writing-card rotation), and the last can
+# quote a model's own chatter.
 PUBLIC_FIELDS = (
     'id', 'round', 'slot', 'kind', 'title', 'outline', 'cast', 'location', 'nearest',
     'premise_line', 'stands_beside', 'residue', 'new_elements', 'extra',
@@ -370,14 +371,35 @@ class Review:
                 'fields': [{'key': f['key'], 'label': f.get('label'), 'label_en': f.get('label_en'),
                             'show': f.get('show', 'note')} for f in spec['fields']],
             },
+            # Fields per format version, so each candidate shows what its own format asked for.
+            'formats': {fid: [{'key': f['key'], 'label': f.get('label'), 'label_en': f.get('label_en'),
+                               'show': f.get('show', 'note')} for f in s.get('fields', [])]
+                        for fid, s in brief_mod.format_specs().items()},
             'characters': self.characters,
             'translate': {'available': self.translator.available()},
+            'lenses': self.lens_options(),
             'rounds': self.rounds(cands),
             'candidates': [blind(c) for c in cands],
             'job': job,
             'rewrites': rewrites,
             'can_generate': block is None,
             'generate_blocked': {'zh': block[0], 'en': block[1]} if block else None,
+        }
+
+    def lens_options(self) -> dict:
+        """The writing cards the generate form's switch uses. `ready` is false while one of them
+        is missing, or, in a live session, still a draft; `missing` and `drafts` say which."""
+        cards = {c['id']: c for c in brief_mod.list_lenses()}
+        wanted = list(dict.fromkeys(lid for cond in run_round.LENS_EXPERIMENT for lid in cond.split('+')
+                                    if lid != brief_mod.NO_LENS))
+        missing = [lid for lid in wanted if lid not in cards]
+        drafts = [lid for lid in wanted if lid in cards and cards[lid]['status'] != 'approved']
+        return {
+            'conditions': list(run_round.LENS_EXPERIMENT),
+            'cards': [cards[lid] for lid in wanted if lid in cards],
+            'missing': missing,
+            'drafts': drafts,
+            'ready': not missing and (self.dry or not drafts),
         }
 
     def taste(self) -> dict:
@@ -401,9 +423,15 @@ class Review:
                 continue
             for r in (c.reasons or ([c.reason] if c.reason else [])):
                 reasons[r] = reasons.get(r, 0) + 1
+        lenses = store.stats(round_id, by='lens')
+        ids = {lid for key in lenses for lid in key.split('+')}
+        names = {c['id']: {'zh': c['name'], 'en': c['name_en']} for c in brief_mod.list_lenses() if c['id'] in ids}
         return {
             'round': round_id,
             'models': store.stats(round_id),
+            # Empty for a round that rotated no writing cards.
+            'lenses': lenses,
+            'lens_names': names,
             'reasons': [{'key': k, 'label': store.REASONS.get(k, k), 'label_en': REASONS_EN.get(k, store.REASONS.get(k, k)),
                          'count': v} for k, v in sorted(reasons.items(), key=lambda kv: -kv[1])],
             'rewrites': sum(1 for c in cands if c.rewrite),
@@ -441,10 +469,11 @@ class Review:
             verdict = store.verdict_for_score(score, has_notes=bool(notes))
         except ValueError as exc:
             raise ApiError(400, str(exc)) from exc
-        # QC's emphasis (2026-09-10): the text box is the feedback. A discard or a shortlist
-        # that says nothing in words is refused here even when a reason chip is ticked.
-        if verdict == 'discarded' and not notes:
-            raise ApiError(400, '丢弃要写一句为什么', 'Say why it goes')
+        # A discard has to say why, but a ticked reason is enough (QC, 2026-09-10; at first the
+        # text box was required even with a reason ticked). A shortlist still needs words: it is
+        # rewritten from exactly those notes, and a reason chip cannot say what is missing.
+        if verdict == 'discarded' and not notes and not reasons:
+            raise ApiError(400, '丢弃要选一个理由，或写一句为什么', 'Tick a reason or say why it goes')
         if verdict == 'shortlisted' and not notes:
             raise ApiError(400, '候补要写清楚好在哪、缺什么', 'Say what works and what is missing')
         ceiling = payload.get('max_chars')
@@ -529,6 +558,19 @@ class Review:
                 or not 1 <= lo <= hi <= store.MAX_PROSE_CHARS):
             raise ApiError(400, f'字数范围要满足 1 ≤ 最小 ≤ 最大 ≤ {store.MAX_PROSE_CHARS}',
                            f'The range needs 1 ≤ lowest ≤ highest ≤ {store.MAX_PROSE_CHARS}')
+        rotate = payload.get('lenses', False)
+        if not isinstance(rotate, bool):
+            raise ApiError(400, '写法参考开关的格式不对', 'lenses must be true or false')
+        if rotate:
+            opts = self.lens_options()
+            if opts['missing']:
+                raise ApiError(409, '缺少写法参考卡：' + '、'.join(opts['missing']),
+                               'Missing writing cards: ' + ', '.join(opts['missing']))
+            if not opts['ready']:
+                raise ApiError(409, '写法参考卡还是草稿（' + '、'.join(opts['drafts']) + '），批准后才能用于实时生成',
+                               'Writing cards are still drafts (' + ', '.join(opts['drafts'])
+                               + '); a live round can use them once they are approved')
+        lenses = list(run_round.LENS_EXPERIMENT) if rotate else None
         with self.lock:
             block = self.generate_block(store.load_all())
             if block:
@@ -539,7 +581,7 @@ class Review:
 
         def work():
             try:
-                meta = run_round.run(dry=self.dry, min_chars=lo, max_chars=hi, log=self.log)
+                meta = run_round.run(dry=self.dry, min_chars=lo, max_chars=hi, lenses=lenses, log=self.log)
                 self.job['round'] = meta['round']
             except Exception as exc:  # noqa: BLE001 - shown in the page's job log
                 self.job['error'] = f'{type(exc).__name__}: {exc}'

@@ -104,12 +104,19 @@ const I18N = {
     rangeError: '字数范围要满足 1 ≤ 最小 ≤ 最大 ≤ {max}',
     confirmLive: '会调用真实模型：一整轮新大纲{extra}。每个位子的上限在 {lo}–{hi} 字之间随机。继续吗？',
     confirmExtra: '，外加 {n} 篇候补重写',
+    confirmLenses: '，并加上写法参考卡',
+    lensToggle: '写法参考卡',
+    lensHint: '把「不加卡」和 {names} 轮流分到各个前提位；哪个位子用了哪张卡，整轮裁完才揭晓',
+    lensHintAll: '每篇故事的 brief 都同时带上 {names}，候补重写也带',
+    lensDrafts: '写法参考卡还是草稿（{ids}），批准后才能用于实时生成',
+    lensMissing: '缺少写法参考卡：{ids}（放在 ResearchAssets/story-lenses/）',
     logPrevious: '上一次生成的日志',
     logRunning: '正在生成…',
     logFailed: '生成失败：{error}',
     logDone: '生成完成：{round}',
     hideLog: '收起',
     hideLogAria: '收起日志',
+    showLog: '查看生成日志',
     empty1: '还没有候选故事。',
     empty2: '在右上角设好字数上限，点「生成下一轮」。',
     storiesN: '{n} 篇',
@@ -126,6 +133,9 @@ const I18N = {
     statsHead: ['模型', '选中', '按意见', '候补', '丢弃', '选中率', '平均分'],
     statsReasons: '丢弃理由：{list}',
     statsRewrites: '另有 {n} 篇重写稿不计入上表：重写的 brief 每篇都不同，不能和同位子的四个模型放在一起比。',
+    statsLensHead: ['写法参考', '选中', '按意见', '候补', '丢弃', '选中率', '平均分'],
+    lensNone: '不加卡（对照）',
+    statsLensNote: '一轮里每个前提位只抽一种条件，所以写法参考和前提位是绑在一起的；要连续几轮轮换完，才分得清是卡的作用还是位子的作用。',
     listSep: '，',
     nameSep: '、',
     reasonSep: '；',
@@ -160,7 +170,7 @@ const I18N = {
     submitting: '提交中…',
     notScored: '还没打分',
     needScore: '先打分：拖滑条，或按数字键',
-    needWhyDiscard: '丢弃要写一句为什么',
+    needWhyDiscard: '丢弃要选一个理由，或写一句为什么',
     needWhyShortlist: '候补要写清楚好在哪、缺什么',
     hintRevise: '提交后立刻交回原模型重写，改写稿会出现在这篇下面',
     hintShortlist: '下一轮生成时由原模型照批注重写',
@@ -173,7 +183,7 @@ const I18N = {
     },
     submitAs: { discarded: '丢弃', shortlisted: '放进候补', selected: '选中', selected_with_notes: '选中并重写' },
     notesHint: {
-      discarded: '为什么丢？（必填）',
+      discarded: '为什么丢？选了理由就可以不写',
       shortlisted: '好在哪、缺什么？（必填）下一轮生成时，原模型会照这段重写',
       selected: '想改的地方（可选）。写了就会立刻交回原模型重写，改完再给你批',
     },
@@ -252,12 +262,19 @@ const I18N = {
     confirmLive:
       'This calls the real models: a full round of new outlines{extra}. Each slot draws a cap between {lo} and {hi} characters. Continue?',
     confirmExtra: ', plus {n} shortlist rewrites',
+    confirmLenses: ', with the writing cards',
+    lensToggle: 'Writing cards',
+    lensHint: 'Rotates no card and {names} across the slots; which slot drew which is revealed once the round is judged',
+    lensHintAll: 'Every story’s brief carries {names}, shortlist rewrites included',
+    lensDrafts: 'The writing cards are still drafts ({ids}); a live round can use them once they are approved',
+    lensMissing: 'Missing writing cards: {ids} (they go in ResearchAssets/story-lenses/)',
     logPrevious: 'Log of the last generation',
     logRunning: 'Generating…',
     logFailed: 'Generation failed: {error}',
     logDone: 'Generated {round}',
     hideLog: 'Hide',
     hideLogAria: 'Hide log',
+    showLog: 'Show generation log',
     empty1: 'No candidate stories yet.',
     empty2: 'Set a length cap at the top right and press “Generate next round”.',
     storiesN: '{n} stories',
@@ -275,6 +292,10 @@ const I18N = {
     statsReasons: 'Discard reasons: {list}',
     statsRewrites:
       '{n} rewrites are left out of this table: every rewrite has its own brief, so they cannot be compared with the four models on a slot.',
+    statsLensHead: ['Writing card', 'Selected', 'With notes', 'Shortlist', 'Discarded', 'Accept rate', 'Avg score'],
+    lensNone: 'No card (control)',
+    statsLensNote:
+      'Each slot draws one condition per round, so within a round a card and its slot move together; it takes a full rotation over several rounds to tell the card’s effect from the slot’s.',
     listSep: ', ',
     nameSep: ', ',
     reasonSep: '; ',
@@ -309,7 +330,7 @@ const I18N = {
     submitting: 'Submitting…',
     notScored: 'Not scored',
     needScore: 'Score it first: drag the slider or press a number',
-    needWhyDiscard: 'Say why it goes',
+    needWhyDiscard: 'Tick a reason or say why it goes',
     needWhyShortlist: 'Say what works and what is missing',
     hintRevise: 'Goes straight back to the same model; the rewrite appears below this story',
     hintShortlist: 'The same model rewrites it from these notes next round',
@@ -327,7 +348,7 @@ const I18N = {
       selected_with_notes: 'Select and rewrite',
     },
     notesHint: {
-      discarded: 'Why does it go? (required)',
+      discarded: 'Why does it go? Optional once a reason is ticked',
       shortlisted: 'What works, what is missing? (required) The same model rewrites from this next round',
       selected: 'What to change (optional). Anything written here sends it straight back to the same model',
     },
@@ -406,7 +427,7 @@ let known = null; // ids already seen, so new arrivals can be announced
 let current = null; // the card keyboard shortcuts act on
 let arrivals = [];
 let logOpen = false;
-let view = 'review'; // 'review' | 'taste'
+let view ='review'; // 'review' | 'taste'
 let T = null; // last /api/taste
 let tasteTab = local.get('story-review:taste-tab') || 'story';
 
@@ -841,6 +862,18 @@ function renderTop() {
     input.max = S.max_prose_chars;
     if (!input.value && document.activeElement !== input) input.value = range[i];
   });
+  const lensBox = form.elements.lenses;
+  const lensOpts = S.lenses || { ready: false, conditions: [], cards: [], missing: [], drafts: [] };
+  lensBox.disabled = !lensOpts.ready;
+  // On unless switched off in this browser: QC chose (2026-09-10) to give every story the cards.
+  lensBox.checked = lensOpts.ready && local.get('story-review:lenses') !== false;
+  const lensNames = lensOpts.cards.map((c) => (lang === 'en' ? c.name_en : c.name)).join(t('nameSep'));
+  const together = lensOpts.conditions.length === 1 && lensOpts.conditions[0] !== 'none';
+  $('#lensopt').title = lensOpts.missing.length
+    ? t('lensMissing', { ids: lensOpts.missing.join(t('nameSep')) })
+    : !lensOpts.ready
+      ? t('lensDrafts', { ids: lensOpts.drafts.join(t('nameSep')) })
+      : t(together ? 'lensHintAll' : 'lensHint', { names: lensNames });
   const button = form.querySelector('button');
   button.disabled = !S.can_generate;
   button.textContent = S.job.running ? t('generating') : t('generate');
@@ -862,13 +895,14 @@ $('#generate').addEventListener('submit', async (e) => {
     return;
   }
   local.set('story-review:range', [lo, hi]);
+  const lenses = form.elements.lenses.checked && !form.elements.lenses.disabled;
   if (S.mode !== 'dry-run') {
     const n = waitlistCount();
-    const extra = n ? t('confirmExtra', { n }) : '';
+    const extra = (n ? t('confirmExtra', { n }) : '') + (lenses ? t('confirmLenses') : '');
     if (!confirm(t('confirmLive', { extra, lo, hi }))) return;
   }
   try {
-    await api('/api/generate', { min_chars: lo, max_chars: hi });
+    await api('/api/generate', { min_chars: lo, max_chars: hi, lenses });
     logOpen = true;
   } catch (err) {
     $('#blocked').textContent = err.message;
@@ -876,12 +910,20 @@ $('#generate').addEventListener('submit', async (e) => {
   refresh();
 });
 
+$('#generate').elements.lenses.addEventListener('change', (e) => {
+  local.set('story-review:lenses', e.target.checked);
+});
+
 function renderJob() {
   if (!S) return;
   const box = $('#joblog');
   const job = S.job;
-  if (job.running) logOpen = true;
-  box.hidden = !logOpen || (!job.running && !job.log.length && !job.error);
+  // The log opens only when QC asks for it: by starting a round from this page, or with the
+  // "show log" button. Nothing here opens it on its own, so reloading the page mid-round keeps
+  // it closed (QC, 2026-09-10), and arriving stories never reopen it after it was hidden.
+  const hasLog = Boolean(job.running || job.log.length || job.error);
+  box.hidden = !logOpen || !hasLog;
+  $('#logtoggle').hidden = logOpen || !hasLog;
   let title = t('logPrevious');
   if (job.running) title = t('logRunning');
   else if (job.error) title = t('logFailed', { error: job.error });
@@ -898,16 +940,20 @@ function renderJob() {
 
 function appendLog(line) {
   if (S) S.job.log.push(line);
-  logOpen = true;
-  const box = $('#joblog');
-  box.hidden = false;
-  const pre = box.querySelector('pre');
+  // Keep the text current even while the log is hidden; whether it shows is renderJob's call.
+  if (!logOpen) $('#logtoggle').hidden = false;
+  const pre = $('#joblog pre');
   pre.textContent += (pre.textContent ? '\n' : '') + line;
   pre.scrollTop = pre.scrollHeight;
 }
 
 $('#joblog .joblog-close').addEventListener('click', () => {
   logOpen = false;
+  renderJob();
+});
+
+$('#logtoggle').addEventListener('click', () => {
+  logOpen = true;
   renderJob();
 });
 
@@ -1092,27 +1138,24 @@ async function toggleStats(s, roundId) {
 }
 
 function statsTable(st) {
-  const rows = Object.entries(st.models).sort(([a], [b]) => a.localeCompare(b));
   const pct = (v) => `${Math.round(v * 100)}%`;
   const reasons = st.reasons.map((x) => `${lang === 'en' ? x.label_en : x.label} ${x.count}`).join(t('listSep'));
-  return h(
-    'div',
-    { class: 'stats' },
+  const table = (head, rows, name) =>
     h(
       'div',
       { class: 'stats-scroll' },
       h(
         'table',
         {},
-        h('thead', {}, h('tr', {}, t('statsHead').map((label) => h('th', { scope: 'col' }, label)))),
+        h('thead', {}, h('tr', {}, head.map((label) => h('th', { scope: 'col' }, label)))),
         h(
           'tbody',
           {},
-          rows.map(([model, row]) =>
+          rows.map(([key, row]) =>
             h(
               'tr',
               {},
-              h('th', { scope: 'row' }, model),
+              h('th', { scope: 'row' }, name(key)),
               h('td', {}, row.selected),
               h('td', {}, row.selected_with_notes),
               h('td', {}, row.shortlisted),
@@ -1123,7 +1166,23 @@ function statsTable(st) {
           ),
         ),
       ),
-    ),
+    );
+  const models = Object.entries(st.models).sort(([a], [b]) => a.localeCompare(b));
+  // The no-card control first, then the cards by id.
+  const lenses = Object.entries(st.lenses || {}).sort(([a], [b]) =>
+    a === 'none' ? -1 : b === 'none' ? 1 : a.localeCompare(b),
+  );
+  const lensName = (key) =>
+    key
+      .split('+')
+      .map((id) => (id === 'none' ? t('lensNone') : (st.lens_names?.[id]?.[lang === 'en' ? 'en' : 'zh'] ?? id)))
+      .join(' + ');
+  return h(
+    'div',
+    { class: 'stats' },
+    table(t('statsHead'), models, (m) => m),
+    lenses.length ? table(t('statsLensHead'), lenses, lensName) : null,
+    lenses.length > 1 ? h('p', {}, t('statsLensNote')) : null,
     st.reasons.length ? h('p', {}, t('statsReasons', { list: reasons })) : null,
     st.rewrites ? h('p', {}, t('statsRewrites', { n: st.rewrites })) : null,
   );
@@ -1240,7 +1299,9 @@ function outline(c) {
 
 function selfNotes(c) {
   const rows = [];
-  for (const f of S.format.fields) {
+  // Candidates written before the format file existed were all asked for v1's fields.
+  const fields = (S.formats && S.formats[c.format_version || 'default@v1']) || S.format.fields;
+  for (const f of fields) {
     if (f.show !== 'note') continue;
     let v = Object.prototype.hasOwnProperty.call(c, f.key) ? c[f.key] : c.extra?.[f.key];
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) continue;
@@ -1325,6 +1386,7 @@ function pendingCard(c) {
     box.addEventListener('change', () => {
       d.reasons = [...reasons.querySelectorAll('input:checked')].map((i) => i.value);
       saveDraft(c.id);
+      sync(); // a ticked reason is enough to discard, so the submit button may change
     });
     reasons.append(h('label', { class: 'reason' }, box, label));
   }
@@ -1364,7 +1426,7 @@ function pendingCard(c) {
 
   function problem(dest) {
     if (!dest) return t('needScore');
-    if (dest === 'discarded' && !notes.value.trim()) return t('needWhyDiscard');
+    if (dest === 'discarded' && !notes.value.trim() && !(d.reasons || []).length) return t('needWhyDiscard');
     if (dest === 'shortlisted' && !notes.value.trim()) return t('needWhyShortlist');
     return '';
   }
@@ -1380,7 +1442,7 @@ function pendingCard(c) {
     pill.className = dest ? `dest band-${bandOf(dest)}` : 'dest';
     reasons.hidden = dest !== 'discarded';
     notes.placeholder = dest ? t('notesHint')[dest] : t('notes');
-    notes.required = dest === 'discarded' || dest === 'shortlisted';
+    notes.required = dest === 'shortlisted' || (dest === 'discarded' && !(d.reasons || []).length);
     ceiling.hidden = dest !== 'selected_with_notes';
     const why = problem(dest);
     let note = why;

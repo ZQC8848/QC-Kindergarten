@@ -38,6 +38,9 @@
         </nav>
         <nav id="filters" class="filters review-only" data-i18n-aria="filtersAria" aria-label="按去向筛选"></nav>
         <span id="progress" class="progress review-only"></span>
+        <button id="logtoggle" class="link logtoggle review-only" type="button" data-i18n="showLog" hidden>
+          查看生成日志
+        </button>
         <span id="trstatus" class="trstatus review-only" role="status" hidden></span>
         <button id="arrivals" class="arrivals review-only" type="button" hidden></button>
         <form id="generate" class="generate review-only">
@@ -65,6 +68,10 @@
               required
             />
             <span data-i18n="chars">字</span>
+          </label>
+          <label id="lensopt" class="lensopt">
+            <input name="lenses" type="checkbox" />
+            <span data-i18n="lensToggle">写法参考卡</span>
           </label>
           <button class="btn" type="submit" data-i18n="generate">生成下一轮</button>
           <span id="blocked" class="blocked" aria-live="polite"></span>

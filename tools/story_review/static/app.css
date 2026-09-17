@@ -203,6 +203,10 @@ kbd {
   color: var(--ink-2);
 }
 
+.logtoggle {
+  font-size: 0.82rem;
+}
+
 .trstatus {
   display: inline-flex;
   align-items: center;
@@ -233,6 +237,24 @@ kbd {
 
 .range input {
   width: 5.2em;
+}
+
+.lensopt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.lensopt:has(input:disabled) {
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.stats .stats-scroll + .stats-scroll {
+  margin-top: 10px;
 }
 
 .blocked {
@@ -717,11 +739,22 @@ kbd {
   border-top: 1px dashed var(--line);
 }
 
+/* A fixed grid rather than a wrapping flex row. The destination text changes length as the
+   score crosses a band ("→ 候补 · 下一轮原模型重写" against "→ 选中"). In a flex row the slider
+   took whatever width the text left over, so crossing 7|8 resized the slider under the
+   pointer, the thumb landed back on 7, and the two states flickered. The destination now sits
+   on its own line, and nothing on the slider's line changes width with the score. */
 .score-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 2.4em;
   align-items: center;
-  gap: 6px 12px;
+  gap: 4px 12px;
+}
+
+.score-row > .dest {
+  grid-column: 2 / -1;
+  justify-self: start;
+  white-space: normal;
 }
 
 .score-label {
@@ -730,8 +763,7 @@ kbd {
 }
 
 .slider-wrap {
-  flex: 1;
-  min-width: 200px;
+  min-width: 0;
   display: grid;
   gap: 2px;
 }
