@@ -1,7 +1,7 @@
 # QC taste — shared by every domain
 
-Version: 0.4  
-Evidence through: 2026-09-09  
+Version: 0.5  
+Evidence through: 2026-09-10  
 Status: evidence-backed working profile
 
 This part applies to all four domains: story creation, image generation, storyboards, and video generation. Each domain file adds its own rules on top of it. Rule numbers are global and stay the same whichever file a rule lives in.

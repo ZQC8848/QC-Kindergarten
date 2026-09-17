@@ -19,6 +19,12 @@ The failure this rule exists to prevent is specific and observed. Round r01 prod
 
 Rule 3 governs what happens *after* the premise. This rule governs whether the premise was worth escalating at all.
 
+### 1b. Objects do not get a will of their own
+
+A hat does not laugh, a shadow does not stand trial, a toy does not decide anything. Objects in these stories carry meaning — a callback, a relationship, a piece of evidence — but no voice, feelings or intentions of their own. When something strange happens around an object, keep it implied and unconfirmed rather than letting the object become a character.
+
+QC rejected both stories in round 2026-09-10-r02 that did this, in the same words: 「禁止把物体拟人化」. This does not cover Ruanruan's 「兔兔说……」, which is her speaking through the bunny and is canon, nor Haide, who is a boy turned into a dog rather than an object.
+
 ### 2. Build the character around a second self
 
 The strongest QC characters have an immediately legible surface and a contrary inner fact:
@@ -44,6 +50,12 @@ MBTI is the entry point, not the character. Two INFJs must not read alike. Add w
 
 Escalation can be extreme, dark, or ridiculous, but each step should grow from a prior character choice. A curse becomes real because Haide immediately breaks his promise; a week-long pursuit follows one careless joke; unexplained speeding tickets connect to dog hair, intelligence, and a permissive uncle. Avoid randomness that could be transferred unchanged to any cast.
 
+### 3a. Plant the cause of the impossible thing
+
+The impossible turn needs a cause too. Before it, plant one small, concrete event that a character did or said — in QC's own example, Ruanruan playing tarot with Aisha — and let the impossible thing grow out of it. An outburst, a transformation or a sudden power that simply arrives is what QC calls 「莫名其妙」.
+
+This is the most common rejection across rounds 2026-09-10-r01 and r02. QC named it directly: 「缺少因果关系；如果有一个唤醒第二人格的前置小事件会更好」, 「为什么晨会上陆姚被惹炸……前后没有因果关系」, 「为什么连招组合能被识别管理员？逻辑不通」, and five more stories came back with 「莫名其妙」 alone.
+
 ### 4. Use an ensemble reaction chain
 
 A strong premise gives several characters different jobs or reactions. Their responses should reveal personality and relationships rather than repeat the same emotion. Keep a clear main comic line, then add one or two quieter side connections instead of giving everyone equal emphasis.
@@ -55,6 +67,12 @@ Prefer physical anchors—red book, baseball bat, bunny, scarf, orange bag, McDo
 ### 6. Keep secrets perspectival
 
 For canonical events, distinguish what happened from what each person witnessed, inferred, misunderstood, or kept secret. A character should not know information merely because the audience or author knows it. Different memories are a source of future comedy, not metadata overhead.
+
+### 6a. Let the strangeness stay unconfirmed
+
+A mystery can live entirely in doubt. One witness glimpses the impossible thing and is not sure what they saw; nobody else notices, including the person it concerns; the traces stay small; and the witness shrugs and gets on with the day. Keep the question open instead of solving it.
+
+QC's own seed shows the shape: after a meteor shower Ruanruan's bunny may or may not have changed, Haide half-sees it riding a tricycle in a police cap at night, Luyao finds his cap on the bunny and blames Haide, and Haide, puzzled, goes back to playing. The rewrite built on that seed scored 7, the highest of both rounds. This rule rests on that one seed and its rewrite.
 
 ### 7. Deliver the joke with restraint
 
@@ -78,9 +96,21 @@ A strong ending returns to an object, habit, or earlier line and quietly changes
 
 QC Kindergarten is entertainment. Depth is welcome when it emerges from character and social consequences, but do not inflate a small comic premise into a universal statement. “Cute, strange, specific, and funny” is a valid endpoint.
 
+### 9a. A sitcom for adults, with the uncanny as seasoning
+
+The setting is a kindergarten, but the audience is not children: write a sitcom, not a children's cartoon. A supernatural touch is welcome when it stays light and comic — a faint uncanny air at most. It must never tip into horror or leave the reader creeped out.
+
+QC: 「背景设定虽然是幼儿园，但主要内容是情景喜剧，不是给幼儿写的故事；这篇像儿童动画」, and later 「这是喜剧 可以带点灵异元素 但是不要写的像鬼片」; another story was rejected as 「很诡异」. The directions QC approved in the same rounds ask for exactly the light version: 「轻微的悬疑感」, 「稍微带一点灵异的氛围」.
+
 ### 10. Let the represented characters push back
 
 Meta-fiction and negotiated representation fit the project when characters can challenge the author, reject their own assigned traits, or turn production history into an in-world joke. Their pushback should itself remain consistent with their personalities.
+
+### 10a. An extra may leave the kindergarten entirely
+
+An extra is free to abandon the setting altogether — an ancient imperial court, another genre, another world — as long as every character stays recognisable by their identity anchors. This is rule 14's bold genre transformation, applied to stories as well as images.
+
+QC, on the palace-coup extra: 「番外可以彻底架空：场景直接设为中国古代宫殿」.
 
 ## Story negative boundaries
 
@@ -94,3 +124,5 @@ Meta-fiction and negotiated representation fit the project when characters can c
 - Do not add a charming detail that hangs from nothing already established.
 - Do not treat resemblance to the real person as the goal, or as a limit on exaggeration.
 - Do not over-explain emotional subtext, symbolism, or the final joke.
+- Do not give an object a will, a voice or feelings of its own.
+- Do not continue, reveal or explain a deliberately open ending.

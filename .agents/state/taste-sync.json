@@ -2,8 +2,8 @@
   "version": 1,
   "parts": {
     "_shared": {
-      "en": "08f11d8bea14efe3118efc522db456143ede372e71fc382c01b40c0206909d2f",
-      "zh": "da40930f03350510e3c9a30f0368ac20488a69d083832d54f24403de51e4b1bc",
+      "en": "acbb21c6d95981cb93e56cf7636bb3a312f0f471f0731b2c548f54112468b9d5",
+      "zh": "e9250bdd637e00afc75214aeed6c347c2934e5c85476dfd4b91ca1d36e1fab79",
       "stamped": "2026-09-10"
     },
     "image": {
@@ -12,8 +12,8 @@
       "stamped": "2026-09-10"
     },
     "story": {
-      "en": "390dd6902dbf23ea8ba09bc675cbd6adb209cf70d1a21cad620e00ac1c6aeec2",
-      "zh": "621184561fe09a6407e2851155fd6228bbd21e6c22928d071f9cb0134b92ec7e",
+      "en": "ca23f5a193c4b3fa34a98cbd646e1d0726957455d135957819f44481461801fc",
+      "zh": "245c0864d554b9f34db77eab96ea15e878d5bc0627948bd789dc5bda8a9f1ebc",
       "stamped": "2026-09-10"
     },
     "storyboard": {

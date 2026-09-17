@@ -70,4 +70,4 @@ Translating is not a rule change and needs no approval. Changing what a rule say
 - Keep project canon separate from transferable taste. A fact about Haide belongs in the bible or story; a repeated preference for reversals built from character contradictions may belong here.
 - Preserve uncertainty and counterexamples. Do not force every work to display every taste rule.
 
-The current profile is version 0.4, derived from available records through 2026-09-09, and was split into four domains and two languages on 2026-09-10 without changing any rule. It is a working hypothesis, not a claim to fully represent QC.
+The current profile is version 0.5, derived from records through 2026-09-10, the first two rounds judged on the review site. It was split into four domains and two languages the same day. It is a working hypothesis, not a claim to fully represent QC.

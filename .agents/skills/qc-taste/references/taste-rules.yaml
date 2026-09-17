@@ -1,5 +1,5 @@
-version: "0.4"
-evidence_through: "2026-09-09"
+version: "0.5"
+evidence_through: "2026-09-10"
 status: "working-profile"
 
 # Incremental cursor for update mode. Each entry is an ai-chat-history record that has
@@ -47,6 +47,14 @@ consumed_records:
     sha256: "3def8b65fb30a2a7fcbb7ac6abb0457ac1dba4bc18ed37952728042677e791e5"
     lines: 9
     consumed_on: "2026-09-10"
+  - path: "ResearchAssets/story-candidates/2026-09-10-r01"
+    sha256: "51b2c9979e9545fcccf03c7f3c15c1dc1f8bb4788872791b89bab52331c6171f"
+    lines: 17
+    consumed_on: "2026-09-10"
+  - path: "ResearchAssets/story-candidates/2026-09-10-r02"
+    sha256: "139b5c66aca1be7766c0897d41871de5578d6d59ecf177ad316486b49cec53cf"
+    lines: 22
+    consumed_on: "2026-09-10"
 
 rules:
   - id: "T001"
@@ -62,11 +70,12 @@ rules:
     evidence: ["E004", "E005", "E006", "E007", "E024"]
     counterexamples: []
   - id: "T003"
-    rule: "Escalate absurd events through character-caused consequences rather than random gags."
+    rule: "Escalate absurd events through character-caused consequences rather than random gags, and plant a small concrete prior event, done or said by a character, that causes the impossible turn itself."
     scope: "qc-kindergarten.story"
-    confidence: "repeated"
-    evidence: ["E008", "E009", "E016"]
+    confidence: "stable"
+    evidence: ["E008", "E009", "E016", "E029", "E030"]
     counterexamples: []
+    note: "Revised 2026-09-10 (0.5). The second clause is profile rule 3a: QC asked outright for a preceding event that wakes the impossible thing, and incoherence was the commonest rejection across two rounds."
   - id: "T004"
     rule: "Use different ensemble reactions to reveal relationships while preserving one dominant comic line."
     scope: "qc-kindergarten.story_visual"
@@ -116,10 +125,10 @@ rules:
     evidence: ["E010", "E013", "E020"]
     counterexamples: []
   - id: "T012"
-    rule: "Use bold genre transformations while preserving each recurring character's identity anchors."
-    scope: "qc-kindergarten.visual"
+    rule: "Use bold genre transformations, in images and in extra stories, which may leave the kindergarten setting entirely, while preserving each recurring character's identity anchors."
+    scope: "qc-kindergarten.story_visual"
     confidence: "repeated"
-    evidence: ["E011"]
+    evidence: ["E011", "E035"]
     counterexamples: []
   - id: "T013"
     rule: "Apply requested corrections locally and preserve the unrelated approved result, in prose as well as image."
@@ -164,7 +173,7 @@ rules:
     rule: "The premise must be something that could not happen in a real kindergarten. Reach for the imaginative and frankly absurd, then anchor it: the absurdity runs on the characters' established logic, never against it."
     scope: "qc-kindergarten.story"
     confidence: "repeated"
-    evidence: ["E023", "E024"]
+    evidence: ["E023", "E024", "E030"]
     counterexamples: []
     open_question: "Only the lower bound is evidenced - too everyday gets rejected. Nothing in the corpus shows QC rejecting a premise for being too far out, so the ceiling is unmapped. Same gap as T016, and both rules push the same direction. Record the first rejected absurd premise as a priority."
     note: "Neither half stands alone. Without the first sentence the profile produces slice-of-life, which is what happened in round r01: six outlines executed T001 and T002 well and were rejected 6/6. Without the second sentence this collides with T002 and with the boundary against spectacle that has no character cause."
@@ -182,3 +191,30 @@ rules:
     evidence: ["E025", "E027"]
     counterexamples: []
     note: "The accepted set runs 387-517 characters with one 2086-character ensemble outlier; the median is 488. QC set the generated ceiling at the longest accepted plus 200."
+  - id: "T022"
+    rule: "Objects never gain a will, voice or feelings of their own; strangeness around an object stays implied and unconfirmed."
+    scope: "qc-kindergarten.story"
+    confidence: "stable"
+    evidence: ["E028"]
+    counterexamples: []
+    note: "Ruanruan speaking through her bunny (「兔兔说……」) is canon, not the bunny's agency; Haide is a transformed boy, not an object."
+  - id: "T023"
+    rule: "Write for an adult sitcom audience, not a children's cartoon; supernatural touches stay light and comic, never horror or creepiness."
+    scope: "qc-kindergarten.story"
+    confidence: "repeated"
+    evidence: ["E031", "E032"]
+    counterexamples: []
+  - id: "T024"
+    rule: "A mystery can live in uncertainty: one unsure witness glimpses the impossible thing, nobody else notices, the traces stay small, and the question is left open."
+    scope: "qc-kindergarten.story"
+    confidence: "provisional"
+    evidence: ["E033", "E032"]
+    counterexamples: []
+    open_question: "One QC seed and the rewrite built on it, which are not independent. Look for the same preference in a story QC did not seed."
+  - id: "T025"
+    rule: "Do not continue, reveal or explain a deliberately open ending."
+    scope: "qc-kindergarten.continuity"
+    confidence: "stable"
+    evidence: ["E034"]
+    counterexamples: []
+    note: "Already enforced in the story brief through the open_ending flag; recorded as taste because QC gave the reason in creative terms: a sequel breaks the atmosphere of both stories."

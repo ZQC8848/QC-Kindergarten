@@ -1,7 +1,7 @@
 # QC taste evidence index
 
-Version: 0.4  
-Verified: 2026-09-09
+Version: 0.5  
+Verified: 2026-09-10
 
 This index records why each current rule exists. It distinguishes direct human decisions from weaker inference based on accepted artifacts. Line numbers are snapshots and may move; the source phrase and turn remain the durable locator.
 
@@ -33,6 +33,14 @@ This index records why each current rule exists. It distinguishes direct human d
 | E024 | Third-party reader's summary of the existing scripts, relayed and endorsed by QC, 2026-09-09 | What a reader finds interesting: the setting is a kindergarten but the content is "not everyday, very imaginative, even a little absurd, yet never off the character settings". Not QC's own decision — it counts because QC brought it forward as grounds for an update. Weak alone; strong with E023, which converges on the same point from the opposite direction. | T019, T002 |
 | E025 | `ResearchAssets/story-candidates/2026-09-09-r02/` (9 candidates + `round.json`) | QC rejects the whole round; both models score 0% again. Only one defect is named — Haide lured by a bone — so eight are filed `superseded` (produced under rules that have since changed) and only `c-4fd7` as `off_character`. Four of the nine put 10–12 characters in one scene, against 3–4 in r01, flattening the dominant comic line. Lengths ran 817–4895 with no ceiling in force. | T021, T004 (counterexample) |
 | E027 | Measured lengths of the accepted stories: 2086 / 517 / 493 / 483 / 454 / 387 non-whitespace characters, median 488 | Rejecting r02, QC asks for the length limit back, sets it at the longest accepted plus 200, and adds that writing to the maximum is not encouraged. | T021 |
+| E028 | `ResearchAssets/story-candidates/2026-09-10-r02/c-e0aa.md`, `c-56f5.md` | Two stories rejected with the same explicit prohibition, 「禁止把物体拟人化」: an officer's cap that laughs before its owner loses his temper, and a dog's shadow tried as an independent suspect. | T022 |
+| E029 | `ResearchAssets/story-candidates/2026-09-10-r01/c-5079.md` (QC #5) | Shortlisting a story, QC names what it lacks: the sleepwalking second self arrives with no cause, and a small preceding event — Ruanruan playing tarot with Aisha — should wake it. A direct request for a planted trigger. | T003 |
+| E030 | `ResearchAssets/story-candidates/2026-09-10-r01/c-fbec.md` (QC #17); `2026-09-10-r02/c-2fd9.md`, `c-ac65.md`, and five stories noted 「莫名其妙」 alone | Rejections for missing causality in both rounds: 「没有因果关系」, 「为什么晨会上陆姚被惹炸……前后没有因果关系」, 「为什么连招组合能被识别管理员？逻辑不通」. All seventeen new stories in r02 were discarded, and incoherence was the most common reason. QC objects to the absent cause, never to the absurdity itself. | T003, T019 |
+| E031 | `ResearchAssets/story-candidates/2026-09-10-r01/c-d13f.md` (QC #11) | 「背景设定虽然是幼儿园，但主要内容是情景喜剧，不是给幼儿写的故事；这篇像儿童动画」. QC fixes the audience: adults watching a sitcom. | T023 |
+| E032 | `ResearchAssets/story-candidates/2026-09-10-r02/c-6dd9.md`, `c-faa3.md`, `c-d6ad.md` | Tone bounded from both sides. 「这是喜剧 可以带点灵异元素 但是不要写的像鬼片」 and 「很诡异」 reject the creepy; the highest-scoring story of both rounds (7) is noted for 「稍微带一点灵异的氛围」. | T023, T024 |
+| E033 | `ResearchAssets/story-candidates/2026-09-10-r01/c-d746.md` (QC #12); `2026-09-10-r02/c-d6ad.md` | QC's own seed: after an event such as a meteor shower the bunny may or may not have changed; Haide half-sees it on a tricycle in a police cap; Luyao blames Haide for his cap; nobody else notices; 「整体要有轻微的悬疑感」. The rewrite built on it scores 7 and is shortlisted. Seed and rewrite are not independent. | T024 |
+| E034 | `ResearchAssets/story-candidates/2026-09-10-r01/` QC #1, #3, #4, #6, #7; `2026-09-10-r02/c-b662.md` | 「法拉利是刻意留的悬念结尾，QC 要求所有法拉利故事的后续一律否决，强行续接会破坏两个故事的氛围」, repeated for King of Rant; a later story is discarded as `forced_sequel`. An explicit, durable instruction given in creative terms. | T025 |
+| E035 | `ResearchAssets/story-candidates/2026-09-10-r01/c-5b29.md` (QC #16) | Shortlisting an extra, QC widens its world: 「番外可以彻底架空：场景直接设为中国古代宫殿」, keeping the cast's anchors (the pastor as imperial adviser, Luyao as the general). | T012 |
 
 ## Known evidence limitations
 
@@ -44,6 +52,10 @@ This index records why each current rule exists. It distinguishes direct human d
 - T019's ceiling is unevidenced. E023 fixes only the lower bound; nothing in the corpus shows QC rejecting a premise for going too far. T016 has the same gap and pushes the same direction, so the two compound.
 - E024 is third-party observation admitted through QC's endorsement. It is the first evidence in this index that did not originate with QC or with an accepted artifact, and it should not be treated as equal in weight to a direct instruction.
 - No held-out preference test has yet been run. Version 0.2 should assist decisions, not claim predictive accuracy.
+- E026 was never assigned; the numbering skips it.
+- T024 rests on one seed and the rewrite made from it (E033). Treat it as provisional until a story QC did not seed shows the same preference.
+- Round 2026-09-10-r02 holds one candidate written by a test script by mistake (`c-d14a`, a dry-run stub, discarded as 「测试用例 丢弃」) and one cut-off model reply (`c-94d5`, 「内容不完整」). Neither was used as taste evidence.
+- Both 2026-09-10 rounds were written under output format default@v1, whose self-description fields (premise, nearest story, stands beside, residue) may have shaped what the models wrote. The rules drawn from these rounds describe what QC selected and rejected, not the format. From the next round the format is v2 and the profile is 0.5 at the same time, so a change in results cannot be attributed to either one alone.
 
 ## Scan log
 
@@ -51,6 +63,7 @@ Update mode reads only records that are new or extended since the last run; the 
 
 | Date | Records read | Outcome |
 |---|---|---|
+| 2026-09-10 | `story-candidates/2026-09-10-r01` (17 candidates), `story-candidates/2026-09-10-r02` (22 candidates) | 0.4 → 0.5. Four rules added — T022 objects get no will, T023 sitcom register, T024 unconfirmed strangeness, T025 open endings stay open — T003 revised to require a planted cause, and T012 widened from images to extras. Approved by QC in full. Not adopted as rules: canon already routed to the bibles (everyone but QC is a child; Mimi and her sister; the pastor no longer charges), a one-off constraint (no female characters in the palace extra), a story-planning seed (a meteor-shower week of three small stories with Lukos and Aisha), and two observations with no QC signal behind them (large casts; 「红书」 in 12 of 17 r02 outlines). `c-d14a` (test artifact) and `c-94d5` (cut-off reply) excluded. |
 | 2026-09-10 | — | Structure only: no rule added, removed or reworded, and the version stays 0.4. At QC's request the profile was split into four domains — story creation, image generation, storyboards, video generation — plus a shared part read with every domain, and kept in English and Chinese under `references/taste/`, with `tools/taste_sync.py` tracking which side is stale. Storyboards and video have no rules yet, because no human decision about either has been recorded. The only wording change is a cross-reference: rule 1a now points to the shared boundaries, where the spectacle boundary moved. |
 | 2026-09-10 | `story-candidates/2026-09-09-r02` (9 candidates) | 0.3 → 0.4. T021 added; T004 gains its first counterexample. **T020 was proposed and not adopted**: QC approved the substance — a forced form never lowers the mind — but ruled it belongs in Haide's bible as canon, since one character is not a pattern. The id is kept as `retired` so it is never reused. QC's direct instruction about Haide, and the length ceiling, were applied without the review gate under authority-order 1 (an explicit instruction in the conversation outranks the profile); both are recorded here rather than as evidence rows because neither supports a profile rule. |
 | 2026-09-09 | `story-candidates/2026-09-09-r01` (6 candidates, new stream) | 0.2 → 0.3. One rule added (T019), one strengthened (T002). The scanner was extended first: it had covered only ai-chat-history, so six freshly tagged rejections read as "nothing new" while `rejected` is the protocol's heaviest evidence type. Approved by QC in full. |
