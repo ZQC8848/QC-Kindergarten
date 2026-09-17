@@ -1,0 +1,13 @@
+Reference image 1 is the BASE composition: the classic Chinese illustration "Runtu stabbing the zha" (moonlit watermelon field at night, big full moon upper-left, starry deep-blue sky, a boy on the right raising a steel pitchfork high over his head, lunging forward). Reference image 2 is the character Lu Yao, reference image 3 is Fufu, reference image 4 is the Priest.
+
+Make a new image that keeps the base composition, camera, framing, lighting, color palette and painted illustration style of reference image 1 EXACTLY, with these changes:
+
+1. Replace the boy Runtu with LU YAO (reference 2). Keep the exact same size, proportion in frame, position (right side), and pose: right arm raising the pitchfork high overhead with tines pointing down-left, left fist clenched at waist, wide lunging stance, legs apart, body leaning toward the left. Lu Yao keeps his identity: black messy hair, sharp grey eyes with a cold determined frown, black peaked military cap with a silver diamond badge, long black double-breasted military greatcoat with dark red lining, black trousers, black boots. Render him in the same painted style as the base picture.
+
+2. FUFU (reference 3) and the PRIEST (reference 4) are redesigned as tiny mouse-people: each keeps their face, hair and outfit, but has fluffy round mouse ears growing out of the top of the head and a thin mouse tail. They are tiny, each about the same size as one of the watermelons in the field.
+
+3. FUFU sits among the watermelons in the lower-left foreground, directly in the path of Lu Yao's pitchfork, hugging a big red slice of watermelon with both arms and happily munching on it, eyes closed in bliss, cheeks full, completely unaware of the danger. Fufu: fluffy orange hair with an ahoge, orange-slice hair clip, cream fleece hoodie with an orange-slice pocket, orange cuffs, small orange crossbody bag. The pitchfork tines are aimed at Fufu, about to strike.
+
+4. The PRIEST stands farther away near the middle of the picture, in the watermelon field in the mid-ground, small because of distance. He has spotted the scene: eyes wide open as round O shapes, mouth open in an O of shock, panicking, one arm stretched out toward Fufu and running forward to rescue Fufu. Priest: messy golden-blonde hair, cream robe with golden-yellow cape and stole embroidered with suns, gold cross necklace, brown pants.
+
+Keep the full moon, starry night sky, dense green watermelon vines and striped watermelons from the base. Humorous, storybook mood. Landscape aspect ratio matching the base image (about 3:2). No text, no watermark.
