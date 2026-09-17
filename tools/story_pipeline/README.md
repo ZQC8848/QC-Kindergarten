@@ -21,6 +21,7 @@ python tools/story_review/server.py --dry-run   # 演练：临时副本 + 假模
 python tools/story_pipeline/brief.py --slots                            # 五个位子分别是什么
 python tools/story_pipeline/brief.py --slot escalation                  # 完整 brief
 python tools/story_pipeline/brief.py --slot escalation --max-chars 300  # 指定大纲上限
+python tools/story_pipeline/brief.py --slot escalation --lens ning-hao-skill+zhou-xingchi-skill  # 带上写法参考卡（草稿也能看）
 
 # 2. 生成（四个模型 × 四个位子 + 一个扩展位 = 17 次调用，外加上一轮候补的重写）
 python tools/story_pipeline/run_round.py
@@ -30,6 +31,8 @@ python tools/story_pipeline/run_round.py --no-taste                        # 消
 python tools/story_pipeline/run_round.py --no-waitlist                     # 这一轮不带回候补
 python tools/story_pipeline/run_round.py --per-model 2                     # 每个模型最多同时几个调用（默认 4）
 python tools/story_pipeline/run_round.py --format default                  # formats/<name>.json
+python tools/story_pipeline/run_round.py --lenses ning-hao-skill+zhou-xingchi-skill   # 每个 brief 带两个完整 skill（评审站开关跑的就是这个）
+python tools/story_pipeline/run_round.py --lenses none,ning-hao,zhou-xingchi   # 或者按位子轮换（实时生成要卡片已批准）
 
 # 3. 推到 Discord 评审频道（一篇一帖，不显示模型名；用评审站就不需要这一步）
 python tools/story_pipeline/publish.py --dry-run     # 先看排版
@@ -70,9 +73,11 @@ r01 问的是「把这三个人放进这个房间会发生什么」——那是�
 
 **盲评在裁决完成前不揭晓模型。** `--stats` 在还有 `pending` 时会拒绝执行。知道作者是谁会把偏好变成习惯，同时毁掉选择本身和 per-model 数据。
 
-**丢弃必须说明为什么。** 理由标签和批注至少要有一样；评审站更严，批注必填，因为 QC 的反馈主要写在文字里，标签只是辅助（2026-09-10）。理由标签可以多选，第一个记为 `reason`，全部记在 `reasons`。理由集在 `store.REASONS`，是 r01 之后按 QC 实际用词重写的。`too_everyday` 和 `bland` 是分开的：前者是前提根本没离开现实，后者是离开了但仍然没味道。
+**丢弃必须说明为什么。** 理由标签和批注至少要有一样，评审站也是这条规则：勾了理由就可以不写字（2026-09-10）。候补不一样，必须写批注，因为下一轮的重写就照这段话来。理由标签可以多选，第一个记为 `reason`，全部记在 `reasons`。理由集在 `store.REASONS`，是 r01 之后按 QC 实际用词重写的。`too_everyday` 和 `bland` 是分开的：前者是前提根本没离开现实，后者是离开了但仍然没味道。
 
 **CLI 必须在干净目录里跑，且 brief 走 stdin。** 前者因为 Claude Code 和 Codex 会读工作目录的 `AGENTS.md`——在仓库里跑等于偷偷多喂整个项目，而 HTTP 那两个只看得到 brief，四个输入不再可比且不报错。后者因为 Windows 命令行上限 32767 字符而 brief 约 36000 字节，当参数传会直接失败或截断。
+
+干净目录还不够：两个 CLI 还会带上**自己家目录里装的东西**。2026-09-10 实测，`claude -p` 能用约 50 个 skill（包括刚装的三个编剧 skill）和一个已连接的 Google Drive，codex 能看到它的系统 skill 和同样三个编剧 skill，而 Kimi、DeepSeek 什么都没有。现在两个 CLI 都关掉了 skill 和外部服务（见「模型」一节）；写作方法只能以 brief 文本的形式进来，四个模型一起收到（见「写法参考卡」）。
 
 **这一步只出大纲，上限 200 字。** r02 试过让模型写完整短篇，产出 817–4895 字，整轮被否——既读不动，也不是这一步该做的事。正文由后面的环节统一执笔，这里要挑的是**值得被写成故事的前提**。
 
@@ -84,7 +89,7 @@ r01 问的是「把这三个人放进这个房间会发生什么」——那是�
 
 **候补必须带 QC 的意见。** `shortlist` 不带 `--notes` 会被拒绝：候补以后要被拿出来重写，没有「好在哪、缺什么」就只会把同一个毛病再生成一遍。
 
-**`stands_beside` 不是 `differs_from`。** r01 用的是「这条和哪篇最接近，区别在哪」，模型全都通过"更小、更静、更少人物"来达成区别——那是最便宜的差异化方式，而且**正在制造寡淡**。现在问的是「凭什么配站在那一篇旁边」，并明确写了不要靠写得更小来制造区别。
+**`stands_beside` 不是 `differs_from`。** r01 用的是「这条和哪篇最接近，区别在哪」，模型全都通过"更小、更静、更少人物"来达成区别——那是最便宜的差异化方式，而且**正在制造寡淡**。现在问的是「凭什么配站在那一篇旁边」，并明确写了不要靠写得更小来制造区别。（输出格式 v2 起模型不再写这个字段，见下一节。）
 
 ## 输出格式
 
@@ -97,6 +102,24 @@ r01 问的是「把这三个人放进这个房间会发生什么」——那是�
 - 对照实验：复制成 `formats/<新名字>.json`，用 `--format <新名字>` 跑。
 
 抽成文件时校验过：新代码渲染出的 brief 和原来硬编码的版本逐字节相同，历史轮次记下的 brief sha256 仍然有效。
+
+**v2（2026-09-10，QC 选定）：只要故事本身和标签**——标题、大纲、类型、出场、地点、新元素。v1 还要模型写前提、最近的同类、「凭什么站在它旁边」和留下的残留。在 v1 下写成的两轮里，这些自述和大纲一样长；r02 有 11/17 篇大纲以「从此……」式的残留句收尾，9/17 篇拿同一篇《Haide 变成狗的那一天》当参照，而 17 篇全部被否决。v1 存档在 `formats/archive/default-v1.json`，旧轮次在评审站上照旧显示它们的字段，`--format archive/default-v1` 也仍能用它生成。原来夹在 `premise_line` 提示里的「这个位子不是续集」挪进了各位子的任务说明，防续写的约束不随格式变化。
+
+## 写法参考卡
+
+三个第三方编剧 skill（周星驰式导演法、宁浩式黑色喜剧、契诃夫戏剧法）只装在本机的用户级目录里，不进这个仓库：许可证不允许把改编过的版本分发出去。它们进入生成的唯一途径是**写法参考卡**：
+
+- 卡片放在私有 submodule 的 `ResearchAssets/story-lenses/<id>.md`，`brief.py` 只知道去那里找。一张卡可以是一段自己写的短方法（正文），也可以用 frontmatter 的 `include` 把文件原文整份带上，每个文件包在自己的代码围栏里。
+- **现在用的是完整 skill（QC 2026-09-11 选定）。** `ning-hao-skill` 和 `zhou-xingchi-skill` 带的是 `story-lenses/skills/` 下两个 skill 的逐字副本，和 `~/.claude/skills` 里装的逐字节相同，私有测试会核对：各自的 `SKILL.md`，加上 `SKILL.md` 规定写故事时要读的参考文件（宁浩：`method.md`；周星驰：`director-method.md`、`comedy-mechanics.md`）。只在要证据时才读的 `source-notes.md` 不带。之前写的精简卡 `ning-hao`、`zhou-xingchi` 留作记录，没用于实时生成。契诃夫不带：原文约 7 万字符，而且大多作用在正文、对白和舞台上。
+- **四个模型拿到的是同一份原文。** claude 和 codex 调用时本机 skill 仍然关着：完整 skill 通过 brief 送进去，四个模型的输入逐字节相同，也不取决于模型自己要不要去打开 skill。brief 从约 2.5 万字符涨到约 4 万。
+- 卡片插在 brief 的「创作偏好」之后、「你的任务」之前，前面统一加一句：只管结构，和「世界与规则」「创作偏好」冲突时以那两部分为准，几份之间有出入时自己取舍。完整 skill 里本来就有导演的名字，也有为电影、犯罪闹剧准备的内容，卡片开头提醒只借方法、不模仿具体作品。
+- **每篇同时带两个 skill。** 评审站的开关跑的是 `run_round.LENS_EXPERIMENT = ['ning-hao-skill+zhou-xingchi-skill']`：一个条件覆盖所有位子（`+` 表示一起用），候补重写也带。对照是 r03：同样的 v2 格式和 taste 0.5，没有卡。代价是分不出是哪一个起的作用。最初的方案是带「不加卡」对照的精简卡轮换，QC 先改成两张卡全加，又改成完整 skill。
+- **也可以轮换。** `--lenses none,ning-hao,zhou-xingchi` 把几种条件按位子轮换：第 i 个位子拿 `conditions[(i + offset) % k]`，同一位子的四个模型拿同一个条件，brief 仍然逐字节相同。`offset` 从这组条件当前循环里还没用过的值中随机抽，k 轮一个循环，每个位子把每种条件都轮到一次。dry run 单独计循环。
+- **记录。** `round.json` 的 `lenses` 记下条件、offset、每个位子抽到什么、每张卡的 sha256；每篇候选记 `lens`（`none`，或 `<卡片 id>@<sha256 前 8 位>`，几张卡用 `+` 连接）。`lens` 和 `model` 一样不发给评审页面，整轮裁完后 `store.stats(round, by='lens')` 和评审站才给出按卡统计。
+- **卡片要 QC 批准。** `status: draft` 的卡只能用在 dry run，实时生成会在调用任何模型之前拒绝。批准后把 `status` 改成 `approved`；sha256 只算正文，批准本身不改变它。私有 submodule 在时，有测试检查开关用到的卡都已批准、带齐了 skill 写作时要读的文件。
+- **重写。** 按意见重写沿用父稿的卡，这样重写时新增的只有 QC 的批注。候补重写如果发生在加卡的轮次里，拿这一轮它那个位子的条件，所以这一轮的每篇故事都带卡；不加卡的轮次里沿用父稿的。卡片已经删除或退回草稿时不带那张，一张都没带上时 `lens` 记为 `none`。
+
+2026-09-10-r03 在评审服务器中断时没来得及写 `round.json`。现在 `round.json` 在第一次调用之前就写一份（`finished: null`），这一轮结束时再补全，中断的轮次也留得下格式、上限、brief sha256 和写法参考卡的分配。
 
 ## 重写
 
@@ -111,11 +134,11 @@ r01 问的是「把这三个人放进这个房间会发生什么」——那是�
 
 | 文件 | 作用 |
 |---|---|
-| `brief.py` | 五个位子的 brief 构建；压缩 12 份 bible、场景、客串、已有故事、taste profile；按格式文件渲染输出要求 |
+| `brief.py` | 五个位子的 brief 构建；压缩 12 份 bible、场景、客串、已有故事、taste profile；按格式文件渲染输出要求；读取写法参考卡 |
 | `formats/default.json` | 模型的输出格式：字段、要求、显示位置 |
-| `adapters.py` | 四个模型统一成 `generate(brief) -> str`；容错的 JSON 解析 |
-| `store.py` | 候选文件读写、裁决状态机、分数分档、备选池衰减、per-model 统计 |
-| `run_round.py` | 编排一轮：按位子抽上限、带回候补重写，写 `round.json`（含每个位子的 brief sha256）；`run()` 供评审站调用 |
+| `adapters.py` | 四个模型统一成 `generate(brief) -> str`；两个 CLI 的隔离参数；容错的 JSON 解析 |
+| `store.py` | 候选文件读写、裁决状态机、分数分档、备选池衰减、按模型和按写法参考卡的统计 |
+| `run_round.py` | 编排一轮：按位子抽上限和写法参考卡、带回候补重写，写 `round.json`（含每个位子的 brief sha256，开始时写一份、结束时补全）；`run()` 供评审站调用 |
 | `rewrite.py` | 候补重写与按意见重写，交给原模型 |
 | `publish.py` | 把一轮推到 Discord 评审频道，一篇一帖 |
 | `review.py` | 终端盲评与裁决 |
@@ -136,6 +159,7 @@ python tools/story_pipeline/adapters.py --test deepseek
 - `claude` / `codex` — 子进程，用本机已登录的订阅态，不需要 key。两者都从 stdin 读 prompt。
   `codex exec` 需要 `--skip-git-repo-check`，因为临时目录故意不是 git 仓库。
   Codex 固定用 `gpt-5.6-sol`，并加 `--ignore-user-config` 和 `--ephemeral`：不读个人的 `~/.codex/config.toml`，否则默认模型、MCP 服务和插件都会跟着各台电脑的个人设置变（有一台电脑的默认模型是 ChatGPT 账号用不了的，会让每一篇 Codex 调用都失败）；也不把每轮的调用写进个人会话历史。
+- **两个 CLI 都不带本机装的 skill 和外部服务**（2026-09-10）。Claude 加 `--disable-slash-commands --strict-mcp-config --no-session-persistence`。Codex 的 `--ignore-user-config` 管不到 `~/.codex/skills`，`codex exec` 也没有关 skill 的开关（`skip_host_skill_discovery` 实测无效）；`adapters.codex_skill_overrides()` 在每次调用时找出所有 `SKILL.md`，用 `-c skills.config=[{path = '…\SKILL.md', enabled = false}, …]` 逐个关掉。路径必须写到 `SKILL.md` 文件本身，写文件夹不起作用，这一点也是实测出来的。以后新装的 skill 会自动被关掉。两边都用「列出你能用的 skill」验证过，关掉后回答都是 NONE。
 
 **并发与到达顺序。** 每个模型各自排队，最多同时 `PER_MODEL_CONCURRENCY = 4` 个调用，模型之间始终并行，每篇写完立刻落盘，评审站随即显示。之前是整轮共用 8 个并发，慢的 CLI 调用会占住名额，快模型后面的故事只能排队。2026-09-10 实测：Kimi、DeepSeek、Claude、Codex 各 4 个同时调用均无限流。
 

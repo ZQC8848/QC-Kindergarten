@@ -131,6 +131,9 @@ class Candidate:
     rewrite: str | None = None             # 'waitlist' | 'revise'; None for a fresh candidate
     rewritten_as: str | None = None        # the rewrite this candidate produced
     format_version: str | None = None      # output format asked for, e.g. default@v1
+    # Writing-method card in the brief: 'none' (the control) or '<card id>@<sha8>'; None when
+    # the round rotated no cards. Hidden until the round is judged, like `model`.
+    lens: str | None = None
     extra: dict = field(default_factory=dict)  # format fields Candidate has no attribute for
     parse_failed: bool = False
     raw: str = ''
@@ -161,7 +164,8 @@ def new_id() -> str:
 
 _SCALAR = ('id', 'round', 'slot', 'model', 'taste_context', 'title', 'kind', 'location',
            'nearest', 'verdict', 'reason', 'notes', 'decided_at', 'published_at',
-           'score', 'max_chars', 'rewrite_max_chars', 'parent', 'rewrite', 'rewritten_as', 'format_version')
+           'score', 'max_chars', 'rewrite_max_chars', 'parent', 'rewrite', 'rewritten_as', 'format_version',
+           'lens')
 
 
 def _yaml_scalar(v) -> str:
@@ -387,25 +391,33 @@ def write_round_meta(round_id: str, meta: dict) -> Path:
     return p
 
 
-def stats(round_id: str) -> dict:
-    """Per-model verdict distribution for one round. Read after review, never before;
-    this is the number blind review exists to protect.
+def stats(round_id: str, by: str = 'model') -> dict:
+    """Verdict distribution for one round, per model or per writing-method card. Read after
+    review, never before; this is the number blind review exists to protect.
 
     Rewrites are left out. The comparison rests on every model on a slot receiving the
-    same brief, and a rewrite brief is by construction unique to one story."""
+    same brief, and a rewrite brief is by construction unique to one story. Per card, a
+    candidate from a round that rotated no cards has nothing to be counted under."""
+    if by not in ('model', 'lens'):
+        raise ValueError(f'stats by {by!r}; expected model or lens')
     out: dict = {}
     scores: dict = {}
     for c in load_round(round_id):
         if c.rewrite:
             continue
-        row = out.setdefault(c.model, {v: 0 for v in VERDICTS})
+        # Per card, the versions drop out of the key: 'ning-hao@97ddf31b+zhou-xingchi@bc74914d'
+        # counts under 'ning-hao+zhou-xingchi'.
+        key = c.model if by == 'model' else '+'.join(p.split('@')[0] for p in (c.lens or '').split('+') if p)
+        if not key:
+            continue
+        row = out.setdefault(key, {v: 0 for v in VERDICTS})
         row[c.verdict] += 1
         if c.score is not None:
-            scores.setdefault(c.model, []).append(c.score)
-    for model, row in out.items():
+            scores.setdefault(key, []).append(c.score)
+    for key, row in out.items():
         total = sum(row.values()) or 1
         row['accept_rate'] = round((row['selected'] + row['selected_with_notes']) / total, 3)
-        s = scores.get(model)
+        s = scores.get(key)
         row['avg_score'] = round(sum(s) / len(s), 2) if s else None
     return out
 

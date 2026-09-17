@@ -138,7 +138,8 @@ def _http_adapter(name: str, env_key: str, base_url: str, model: str) -> Adapter
     return Adapter(name, 'http', generate, available)
 
 
-def _cli_adapter(name: str, exe: str, argv: list[str]) -> Adapter:
+def _cli_adapter(name: str, exe: str, argv) -> Adapter:
+    """`argv` is a list, or a function returning one when part of it is read at call time."""
     def available():
         if not shutil.which(exe):
             return (False, f'{exe} not on PATH')
@@ -147,9 +148,25 @@ def _cli_adapter(name: str, exe: str, argv: list[str]) -> Adapter:
     def generate(brief: str) -> str:
         if not shutil.which(exe):
             raise RuntimeError(f'{exe} not on PATH')
-        return _run_cli(argv, brief)
+        return _run_cli(argv() if callable(argv) else argv, brief)
 
     return Adapter(name, 'cli', generate, available)
+
+
+# Both CLIs are agents with a home directory of their own, and both bring what is installed
+# there into every call, whatever directory it runs in. Checked on 2026-09-10 by asking each
+# which skills it could use: `claude -p` listed about fifty (every user, plugin and built-in
+# skill, the three screenwriting skills QC had just installed among them) and a connected
+# Google Drive; codex listed its system skills and the same three. Kimi and DeepSeek see none
+# of it, so two of the four arms were being offered writing methods the other two never got,
+# the imbalance the scratch directory exists to prevent. A writing method now reaches a model
+# only as brief text that all four receive (brief.load_lens).
+#
+# --disable-slash-commands switches every skill off and --strict-mcp-config every MCP server
+# not passed on the command line, which is none; with both, the same question got NONE twice.
+# --no-session-persistence keeps a round's calls out of the personal session history.
+CLAUDE_ARGV = ['claude', '-p', '--model', 'opus', '--effort', 'max',
+               '--disable-slash-commands', '--strict-mcp-config', '--no-session-persistence']
 
 
 # codex exec, run as an isolated tool rather than as the user's own Codex (2026-09-10).
@@ -162,6 +179,29 @@ def _cli_adapter(name: str, exe: str, argv: list[str]) -> Adapter:
 CODEX_MODEL = 'gpt-5.6-sol'
 CODEX_ARGV = ['codex', 'exec', '--skip-git-repo-check', '--ignore-user-config', '--ephemeral',
               '-m', CODEX_MODEL, '-c', 'model_reasoning_effort="high"', '-']
+
+
+def codex_skill_overrides(home: Path | None = None) -> list[str]:
+    """`-c` arguments that switch off every skill installed for Codex.
+
+    --ignore-user-config skips config.toml but not $CODEX_HOME/skills, and codex exec has no
+    switch for skills: the skip_host_skill_discovery feature changed nothing (2026-09-10).
+    A `skills.config` entry per skill does work, but only when its path names the SKILL.md
+    file; naming the skill's folder, as the config reference describes, left every skill
+    visible. The files are listed at call time, so a skill installed later is covered too."""
+    home = home or Path(os.environ.get('CODEX_HOME') or Path.home() / '.codex')
+    skills = home / 'skills'
+    files = sorted(skills.rglob('SKILL.md')) if skills.is_dir() else []
+    if not files:
+        return []
+    # TOML literal strings keep a Windows path's backslashes as they are; a path that itself
+    # contains a quote falls back to an escaped basic string.
+    quoted = (f"'{p}'" if "'" not in str(p) else json.dumps(str(p)) for p in files)
+    return ['-c', 'skills.config=[' + ', '.join(f'{{path = {q}, enabled = false}}' for q in quoted) + ']']
+
+
+def codex_argv() -> list[str]:
+    return CODEX_ARGV[:-1] + codex_skill_overrides() + CODEX_ARGV[-1:]
 
 # Every adapter is pinned to the strongest tier its account can reach, verified against
 # each provider's live catalogue on 2026-09-10 rather than assumed. The CLI invocations
@@ -179,12 +219,13 @@ ADAPTERS = {
     # unknown tier. -flash is the cheap fast one; -v4-pro is the flagship.
     'deepseek': _http_adapter('deepseek', 'DEEPSEEK_API_KEY', 'https://api.deepseek.com/v1', 'deepseek-v4-pro'),
     # Both read the prompt from stdin: `claude -p` with no prompt argument, `codex exec -`.
-    # Opus at max effort is the top of what the subscription reaches.
-    'claude': _cli_adapter('claude', 'claude', ['claude', '-p', '--model', 'opus', '--effort', 'max']),
+    # Opus at max effort is the top of what the subscription reaches. The isolation flags
+    # are explained at CLAUDE_ARGV above.
+    'claude': _cli_adapter('claude', 'claude', CLAUDE_ARGV),
     # codex exec has no --effort flag; reasoning effort goes through a config override.
     # --skip-git-repo-check: the scratch directory is deliberately not a git repo.
-    # The flags are explained at CODEX_ARGV above.
-    'codex': _cli_adapter('codex', 'codex', CODEX_ARGV),
+    # The flags are explained at CODEX_ARGV and codex_skill_overrides above.
+    'codex': _cli_adapter('codex', 'codex', codex_argv),
 }
 
 

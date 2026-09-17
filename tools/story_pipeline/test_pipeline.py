@@ -341,7 +341,9 @@ class Brief(unittest.TestCase):
             text = brief_mod.build(taste=False, slot=slot)
             self.assertNotIn('接了哪篇', text, slot)
             self.assertIn('这个位子不是续集，不要接任何已有故事', text, slot)
-        self.assertIn('说明你接的是哪一篇的哪个残留', brief_mod.build(taste=False, slot='consequence'))
+        # The per-slot premise hint belongs to formats with a premise field, like the archived v1.
+        self.assertIn('说明你接的是哪一篇的哪个残留',
+                      brief_mod.build(taste=False, slot='consequence', fmt='archive/default-v1'))
 
     def test_the_escalation_example_does_not_hand_out_a_target(self):
         # It used to ask what 艾莎's grudge book could be pushed to; 10 of 17 outlines used it.
@@ -353,7 +355,7 @@ class Brief(unittest.TestCase):
         # r01's `differs_from` was answered by being smaller and quieter than the good
         # stories, because that is the cheapest way to be different. The replacement asks
         # what earns the comparison instead.
-        text = brief_mod.build(taste=False, slot='contradiction')
+        text = brief_mod.build(taste=False, slot='contradiction', fmt='archive/default-v1')
         self.assertIn('stands_beside', text)
         self.assertIn('不是"比它小"', text)
         self.assertNotIn('differs_from', text)
@@ -629,8 +631,67 @@ class Streaming(TempStore):
         self.assertIn('c-dead.md', err.getvalue())
         self.assertEqual([p.name for p in (store.CANDIDATES / 'r-io').iterdir() if p.suffix == '.tmp'], [])
 
+    def test_round_json_is_on_disk_before_the_first_story_arrives(self):
+        import run_round
+        seen = []
 
-class CodexIsolation(unittest.TestCase):
+        def call(model, text, dry):
+            files = list(store.CANDIDATES.glob('*/round.json'))
+            seen.append(json.loads(files[0].read_text(encoding='utf-8'))['finished'] if files else 'missing')
+            return run_round.STUB, None
+
+        saved = run_round.call
+        run_round.call = call
+        try:
+            meta = run_round.run(dry=True, taste=False, models=['kimi'], slots=['escalation'], expansion=False,
+                                 log=lambda s: None)
+        finally:
+            run_round.call = saved
+        self.assertEqual(seen, [None])   # there, and marked unfinished
+        on_disk = json.loads((store.CANDIDATES / meta['round'] / 'round.json').read_text(encoding='utf-8'))
+        self.assertEqual((on_disk['written'], on_disk['finished']), (1, meta['finished']))
+        self.assertIsNotNone(meta['finished'])
+
+
+class FormatV2(unittest.TestCase):
+    def test_the_default_format_asks_only_for_the_story_and_its_labels(self):
+        spec = brief_mod.load_format()
+        self.assertEqual([f['key'] for f in spec['fields']],
+                         ['title', 'outline', 'kind', 'cast', 'location', 'new_elements'])
+        for slot in list(brief_mod.SLOTS) + ['expansion']:
+            text = brief_mod.build(taste=False, slot=slot)
+            for gone in ('stands_beside', 'residue', '`nearest`', 'premise_line', '<<'):
+                self.assertNotIn(gone, text, (slot, gone))
+
+    def test_the_not_a_sequel_guard_survives_the_format_change(self):
+        for slot in ('contradiction', 'escalation', 'transposition', 'expansion'):
+            self.assertEqual(brief_mod.build(taste=False, slot=slot).count('这个位子不是续集，不要接任何已有故事'), 1, slot)
+
+    def test_v1_is_archived_and_still_renders(self):
+        text = brief_mod.build(taste=False, slot='consequence', fmt='archive/default-v1')
+        for kept in ('stands_beside', 'residue', '`nearest`', '说明你接的是哪一篇的哪个残留'):
+            self.assertIn(kept, text)
+        self.assertLessEqual({'default@v1', 'default@v2'}, set(brief_mod.format_specs()))
+
+
+class CutOffOutlines(unittest.TestCase):
+    def test_a_short_outline_that_stops_mid_sentence_is_flagged_and_keeps_its_raw_reply(self):
+        import run_round
+        raw = json.dumps({'title': '战车', 'outline': '艾莎给软软算塔罗，翻出'}, ensure_ascii=False)
+        c = run_round.to_candidate(raw, 'kimi', 'r-test', 'contradiction', 'on', max_chars=200)
+        self.assertTrue(c.parse_failed)
+        self.assertEqual(c.raw, raw)
+        self.assertEqual(c.outline, '艾莎给软软算塔罗，翻出')
+
+    def test_short_but_finished_or_long_but_unpunctuated_outlines_pass(self):
+        import run_round
+        for outline in ('他笑了。', '「好。」', '一' * 120):
+            raw = json.dumps({'title': 'T', 'outline': outline}, ensure_ascii=False)
+            c = run_round.to_candidate(raw, 'kimi', 'r-test', 'contradiction', 'on', max_chars=200)
+            self.assertFalse(c.parse_failed, outline)
+
+
+class CliIsolation(unittest.TestCase):
     def test_codex_ignores_the_personal_config_and_pins_its_model(self):
         import adapters
         argv = adapters.CODEX_ARGV
@@ -638,6 +699,261 @@ class CodexIsolation(unittest.TestCase):
             self.assertIn(flag, argv)
         self.assertEqual(argv[argv.index('-m') + 1], adapters.CODEX_MODEL)
         self.assertEqual(argv[-1], '-')   # the brief arrives on stdin, never as an argument
+
+    def test_claude_runs_without_skills_or_mcp_servers(self):
+        import adapters
+        for flag in ('-p', '--disable-slash-commands', '--strict-mcp-config'):
+            self.assertIn(flag, adapters.CLAUDE_ARGV)
+        self.assertNotIn('--mcp-config', adapters.CLAUDE_ARGV)
+        self.assertIs(adapters.ADAPTERS['claude'].kind, 'cli')
+
+    def test_every_installed_codex_skill_is_switched_off_by_its_skill_md(self):
+        import adapters
+        import tomllib
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            self.assertEqual(adapters.codex_skill_overrides(home), [])
+            for rel in ('skills/.system/imagegen', 'skills/ning-hao-black-comedy', "skills/it's-quoted"):
+                (home / rel).mkdir(parents=True)
+                (home / rel / 'SKILL.md').write_text('---\nname: x\n---\n', encoding='utf-8')
+            flag, value = adapters.codex_skill_overrides(home)
+            self.assertEqual(flag, '-c')
+            key, _, toml_value = value.partition('=')
+            self.assertEqual(key, 'skills.config')
+            entries = tomllib.loads('config = ' + toml_value)['config']
+            # The file, not the folder: only the file actually hides a skill.
+            self.assertEqual(sorted(Path(e['path']) for e in entries), sorted(home.rglob('SKILL.md')))
+            self.assertTrue(all(e['enabled'] is False for e in entries))
+        argv = adapters.codex_argv()
+        self.assertEqual(argv[-1], '-')
+        self.assertEqual(argv[:len(adapters.CODEX_ARGV) - 1], adapters.CODEX_ARGV[:-1])
+
+
+LENS_CARD = '---\nid: {id}\nname: 测试卡（宁浩式）\nname_en: Test card\nstatus: {status}\n---\n\n**核心：{body}**\n'
+# Read before any test points brief.LENS_DIR at a temporary directory.
+REAL_LENS_DIR = brief_mod.LENS_DIR
+
+
+class LensCards(TempStore):
+    def setUp(self):
+        super().setUp()
+        self._lens_tmp = tempfile.TemporaryDirectory()
+        self._saved_lens_dir = brief_mod.LENS_DIR
+        brief_mod.LENS_DIR = Path(self._lens_tmp.name)
+        self.card('ning-hao', 'draft', '每个人的打算都合理')
+        self.card('zhou-xingchi', 'draft', '荒诞的是处境')
+        (brief_mod.LENS_DIR / 'README.md').write_text('# not a card\n', encoding='utf-8')
+
+    def tearDown(self):
+        brief_mod.LENS_DIR = self._saved_lens_dir
+        self._lens_tmp.cleanup()
+        super().tearDown()
+
+    def card(self, lid: str, status: str, body: str) -> None:
+        (brief_mod.LENS_DIR / f'{lid}.md').write_text(LENS_CARD.format(id=lid, status=status, body=body), encoding='utf-8')
+
+    def test_a_draft_card_is_refused_unless_drafts_are_allowed(self):
+        with self.assertRaises(ValueError):
+            brief_mod.load_lens('ning-hao')
+        draft = brief_mod.load_lens('ning-hao', allow_draft=True)
+        self.card('ning-hao', 'approved', '每个人的打算都合理')
+        approved = brief_mod.load_lens('ning-hao')
+        self.assertEqual(draft['sha256'], approved['sha256'])   # approving a card does not change it
+        self.assertEqual(approved['label'], 'ning-hao@' + approved['sha256'][:8])
+        for bad in ('none', '../x', 'Ning', 'missing'):
+            with self.assertRaises(ValueError, msg=bad):
+                brief_mod.load_lens(bad, allow_draft=True)
+        self.assertEqual([c['id'] for c in brief_mod.list_lenses()], ['ning-hao', 'zhou-xingchi'])
+
+    def test_the_card_sits_between_the_taste_and_the_task_and_its_name_stays_out(self):
+        card = brief_mod.load_lens('ning-hao', allow_draft=True)
+        self.assertNotIn('## 写法参考', brief_mod.build(taste=True, slot='escalation'))
+        text = brief_mod.build(taste=True, slot='escalation', lens=card)
+        self.assertEqual(text.count(card['text']), 1)
+        self.assertLess(text.index('## 创作偏好'), text.index('## 写法参考'))
+        self.assertLess(text.index('## 写法参考'), text.index('## 你的任务'))
+        self.assertIn('以那两部分为准', text)
+        self.assertNotIn('宁浩', text)
+        self.assertEqual(text, brief_mod.build(taste=True, slot='escalation', lens=card))
+        self.assertNotIn('「创作偏好」', brief_mod.build(taste=False, slot='escalation', lens=card))
+
+    def test_the_rotation_does_not_repeat_an_offset_within_a_cycle(self):
+        import random
+        import run_round
+        conditions = ['none', 'ning-hao', 'zhou-xingchi']
+        store.write_round_meta('2026-01-01-r01', {'dry_run': False, 'lenses': {'conditions': conditions, 'offset': 1}})
+        # Dry rounds keep a cycle of their own, and other condition lists are another experiment.
+        store.write_round_meta('2026-01-02-r01', {'dry_run': True, 'lenses': {'conditions': conditions, 'offset': 2}})
+        store.write_round_meta('2026-01-03-r01', {'dry_run': False, 'lenses': {'conditions': ['none', 'x'], 'offset': 0}})
+        picks = {run_round.pick_lens_offset(conditions, random.Random(s), dry=False) for s in range(40)}
+        self.assertEqual(picks, {0, 2})
+        for i, offset in enumerate((0, 2), start=4):
+            store.write_round_meta(f'2026-01-0{i}-r01', {'dry_run': False, 'lenses': {'conditions': conditions, 'offset': offset}})
+        # A finished cycle opens every offset again.
+        picks = {run_round.pick_lens_offset(conditions, random.Random(s), dry=False) for s in range(40)}
+        self.assertEqual(picks, {0, 1, 2})
+        self.assertEqual(run_round.assign_lenses(['a', 'b', 'c', 'd'], conditions, 2),
+                         {'a': 'zhou-xingchi', 'b': 'none', 'c': 'ning-hao', 'd': 'zhou-xingchi'})
+
+    def test_every_model_on_a_slot_gets_the_same_card_and_the_round_records_it(self):
+        import run_round
+        conditions = ['none', 'ning-hao', 'zhou-xingchi']
+        meta = run_round.run(dry=True, taste=False, seed=3, lenses=conditions, log=lambda s: None)
+        by_slot = meta['lenses']['by_slot']
+        self.assertEqual(set(by_slot.values()), set(conditions))   # five slots, three conditions
+        self.assertEqual(set(meta['lenses']['cards']), {'ning-hao', 'zhou-xingchi'})
+        cands = [c for c in store.load_round(meta['round']) if not c.rewrite]
+        for slot, cond in by_slot.items():
+            cards = brief_mod.load_lenses(cond, allow_draft=True)
+            self.assertEqual({c.lens for c in cands if c.slot == slot}, {brief_mod.lens_label(cards)}, slot)
+            expected = brief_mod.build(taste=False, slot=slot, max_chars=meta['max_chars'][slot], lens=cards)
+            self.assertEqual(meta['brief_sha256'][slot], brief_mod.sha256(expected), slot)
+        by_lens = store.stats(meta['round'], by='lens')
+        self.assertEqual(set(by_lens), set(conditions))
+        self.assertEqual(sum(row['pending'] for row in by_lens.values()), len(cands))
+        self.assertIsNone(run_round.run(dry=True, taste=False, log=lambda s: None)['lenses'])
+
+    def test_a_card_can_carry_whole_files_and_its_version_follows_them(self):
+        skill = brief_mod.LENS_DIR / 'skills' / 'demo'
+        (skill / 'references').mkdir(parents=True)
+        (skill / 'SKILL.md').write_bytes('# Demo\n\n```text\nPlan:\n```\n'.encode('utf-8'))
+        (skill / 'references' / 'method.md').write_bytes(b'# Method\r\nCollide.\r\n')
+        (brief_mod.LENS_DIR / 'demo-skill.md').write_bytes(
+            '---\nid: demo-skill\nstatus: approved\ninclude: skills/demo/SKILL.md, skills/demo/references/method.md\n'
+            '---\n\n完整原文。\n'.encode('utf-8'))
+        card = brief_mod.load_lens('demo-skill')
+        text = card['text']
+        self.assertEqual(card['includes'], ['skills/demo/SKILL.md', 'skills/demo/references/method.md'])
+        self.assertLess(text.index('完整原文。'), text.index('文件 `demo/SKILL.md`'))
+        self.assertLess(text.index('文件 `demo/SKILL.md`'), text.index('文件 `demo/references/method.md`'))
+        # The fence outruns the file's own ``` blocks, and Windows line endings are normalised.
+        self.assertIn('````markdown\n# Demo\n\n```text\nPlan:\n```\n````', text)
+        self.assertIn('````markdown\n# Method\nCollide.\n````', text)
+        (skill / 'references' / 'method.md').write_bytes(b'# Method\nCollide twice.\n')
+        self.assertNotEqual(brief_mod.load_lens('demo-skill')['sha256'], card['sha256'])
+        for bad in ('../outside.md', 'skills/demo/missing.md'):
+            (brief_mod.LENS_DIR / 'bad.md').write_bytes(f'---\nid: bad\nstatus: approved\ninclude: {bad}\n---\n'.encode())
+            with self.assertRaises(ValueError, msg=bad):
+                brief_mod.load_lens('bad')
+
+    def test_the_switch_gives_every_story_both_skills_waitlist_rewrites_included(self):
+        import run_round
+        self.assertEqual(run_round.LENS_EXPERIMENT, ['ning-hao-skill+zhou-xingchi-skill'])   # QC, 2026-09-11
+        cond = run_round.LENS_EXPERIMENT[0]
+        for lid in cond.split('+'):
+            self.card(lid, 'draft', f'{lid} 的完整原文')
+        parent = self.make(id='c-wait', round='2026-01-01-r01', slot='escalation', model='kimi')
+        store.decide(parent, 'shortlisted', notes='缺前置事件', score=5, now=NOW)
+        seen = []
+
+        def call(model, text, dry):
+            seen.append(text)
+            return run_round.STUB, None
+
+        saved = run_round.call
+        run_round.call = call
+        try:
+            meta = run_round.run(dry=True, taste=True, lenses=run_round.LENS_EXPERIMENT, log=lambda s: None)
+        finally:
+            run_round.call = saved
+        cards = brief_mod.load_lenses(cond, allow_draft=True)
+        cands = store.load_round(meta['round'])
+        self.assertEqual(len(seen), len(cands))
+        self.assertIn('waitlist', {c.rewrite for c in cands})
+        for text in seen:
+            for card in cards:
+                self.assertEqual(text.count(card['text']), 1)
+            self.assertIn('彼此之间有出入时', text)
+            self.assertLess(text.index('### 参考一'), text.index('### 参考二'))
+        self.assertEqual({c.lens for c in cands}, {brief_mod.lens_label(cards)})
+        self.assertEqual(set(store.stats(meta['round'], by='lens')), {cond})
+        # A later revise rewrite of one of these stories keeps both cards.
+        import rewrite as rewrite_mod
+        again, label = rewrite_mod.lens_for(cands[0], dry=True)
+        self.assertEqual((len(again), label), (2, brief_mod.lens_label(cards)))
+
+    def test_a_live_round_refuses_a_draft_card_before_calling_any_model(self):
+        import run_round
+        for lid in run_round.LENS_EXPERIMENT[0].split('+'):
+            self.card(lid, 'draft', lid)
+        calls = []
+        saved = run_round.call
+        run_round.call = lambda *a: calls.append(a) or (run_round.STUB, None)
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                run_round.run(dry=False, taste=False, lenses=run_round.LENS_EXPERIMENT, log=lambda s: None)
+            for bad in ([], ['none', 'none']):
+                with self.assertRaises(ValueError, msg=bad):
+                    run_round.run(dry=True, taste=False, lenses=bad, log=lambda s: None)
+        finally:
+            run_round.call = saved
+        self.assertIn('draft', str(ctx.exception))
+        self.assertEqual(calls, [])
+        self.assertEqual(list(store.CANDIDATES.iterdir()), [])
+
+    def test_a_rewrite_keeps_the_card_its_parent_was_written_under(self):
+        import rewrite as rewrite_mod
+        import run_round
+        card = brief_mod.load_lens('zhou-xingchi', allow_draft=True)
+        seen = []
+
+        def call(model, text, dry):
+            seen.append(text)
+            return run_round.STUB, None
+
+        def rewrite(cid):
+            parent = self.make(id=cid, round='2026-01-01-r01', slot='escalation', model='kimi', lens=card['label'])
+            store.decide(parent, 'shortlisted', notes='缺前置事件', score=5, now=NOW)
+            child, _ = rewrite_mod.run(store.find(cid), 'waitlist', round_id='2026-01-02-r01', call=call,
+                                       to_candidate=run_round.to_candidate, dry=True)
+            return child
+
+        self.assertEqual(rewrite('c-keep').lens, card['label'])
+        self.assertEqual(seen[-1].count(card['text']), 1)
+        # A card that has since gone leaves the rewrite without one, and its label says so.
+        (brief_mod.LENS_DIR / 'zhou-xingchi.md').unlink()
+        self.assertEqual(rewrite('c-gone').lens, 'none')
+        self.assertNotIn('## 写法参考', seen[-1])
+
+
+@unittest.skipUnless(REAL_LENS_DIR.is_dir(), 'the private submodule is not checked out')
+class PrivateLensCards(unittest.TestCase):
+    def setUp(self):
+        self._saved = brief_mod.LENS_DIR
+        brief_mod.LENS_DIR = REAL_LENS_DIR
+
+    def tearDown(self):
+        brief_mod.LENS_DIR = self._saved
+
+    def test_the_switch_sends_whole_approved_skills_matching_what_is_installed(self):
+        import run_round
+        for cond in run_round.LENS_EXPERIMENT:
+            # Without allow_draft: a live round from the review site has to be able to load them.
+            for card in brief_mod.load_lenses(cond):
+                self.assertEqual(card['status'], 'approved', card['id'])
+                names = {Path(p).parts[1] for p in card['includes']}
+                self.assertEqual(len(names), 1, card['id'])
+                skill = REAL_LENS_DIR / 'skills' / names.pop()
+                # Everything the skill reads for writing; source-notes.md is for evidence requests only.
+                wanted = {'SKILL.md'} | {f'references/{p.name}' for p in (skill / 'references').glob('*.md')
+                                         if p.name != 'source-notes.md'}
+                self.assertEqual({Path(p).relative_to(Path('skills') / skill.name).as_posix()
+                                  for p in card['includes']}, wanted, card['id'])
+                installed = Path.home() / '.claude' / 'skills' / skill.name
+                if installed.is_dir():
+                    for rel in wanted:
+                        self.assertEqual((skill / rel).read_bytes(), (installed / rel).read_bytes(), rel)
+
+    def test_short_cards_never_name_a_director(self):
+        for path in REAL_LENS_DIR.glob('*.md'):
+            try:
+                card = brief_mod.load_lens(path.stem, allow_draft=True)
+            except ValueError:
+                continue   # README.md
+            if card['includes']:
+                continue   # a whole skill names its director by design
+            for name in ('宁浩', '周星驰', '契诃夫', 'Ning Hao', 'Stephen Chow', 'Chekhov'):
+                self.assertNotIn(name, card['text'], card['id'])
 
 
 if __name__ == '__main__':

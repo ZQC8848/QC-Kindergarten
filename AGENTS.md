@@ -9,7 +9,7 @@
 - `Scene Reference/` — 场景参考图，故事的 `location` 与网站地点页都引用它。
 - `website/` — Astro 双语站，构建时从上面三个目录同步内容。跑法见 `website/README.md`。
 - `tools/` — 两个 agent 共用的脚本：`audit_en.py`（中英覆盖审计）、`skill_stubs.py`（skill 桩同步）、`taste_scan.py`（算出 `qc-taste` 这次该读哪些新增的对话记录）、`taste_sync.py`（taste 中英两版是否同步；Claude Code 的 hook 在每次编辑后调用它，CI 也跑）。
-- `tools/story_pipeline/` — 故事生成流水线：四模型并行出大纲、盲评裁决、候选库、两种重写。输出格式在 `formats/default.json`，改格式不改代码。跑法见其 `README.md`，设计见 `docs/2026-09-09-story-pipeline-design.md`。候选数据在私有 submodule 的 `story-candidates/`。
+- `tools/story_pipeline/` — 故事生成流水线：四模型并行出大纲、盲评裁决、候选库、两种重写、写法参考卡。输出格式在 `formats/default.json`，改格式不改代码。跑法见其 `README.md`，设计见 `docs/2026-09-09-story-pipeline-design.md`。候选数据和写法参考卡在私有 submodule 的 `story-candidates/` 与 `story-lenses/`；第三方编剧 skill 本身只装在用户级目录，不进这个仓库。
 - `tools/story_review/` — 本地评审站（只在 127.0.0.1 跑，不上 Vercel）：打分定去向、批注、生成下一轮、触发重写；中英切换（故事和批注走 Google 翻译，key 在私有 submodule）与日夜主题。`python tools/story_review/server.py --dry-run` 在临时副本上演练。见其 `README.md`。
 - `.github/workflows/ci.yml` — push 与 PR 上跑单元测试、`npm run verify`、英文覆盖审计、skill 桩校验、流水线与评审站的 Python 测试。注意 CI 构建的 dist 只用于校验，上线的是本地 prebuilt 的那份（见 `website/README.md`）。
 - `.agents/state/` — skill 的运行时状态（如 discord 通知记录、taste 中英同步记录）。skill 目录只放定义，会变的东西放这里。

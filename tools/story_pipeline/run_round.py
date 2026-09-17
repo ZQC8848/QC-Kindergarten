@@ -7,6 +7,7 @@
     python tools/story_pipeline/run_round.py --no-taste                # ablation arm
     python tools/story_pipeline/run_round.py --models kimi,deepseek
     python tools/story_pipeline/run_round.py --format default          # formats/<name>.json
+    python tools/story_pipeline/run_round.py --lenses none,ning-hao,zhou-xingchi   # rotate writing-method cards
 
 Shape of a round:
 
@@ -31,6 +32,7 @@ import concurrent.futures as futures
 import datetime as dt
 import json
 import random
+import re
 import sys
 import threading
 from pathlib import Path
@@ -50,6 +52,16 @@ BASE_SLOTS = ['consequence', 'contradiction', 'escalation', 'transposition']
 # story; within one model the limit keeps a subscription or an API tier from being flooded.
 # Four is the peak each model already reached in earlier rounds without a failure.
 PER_MODEL_CONCURRENCY = 4
+
+# What the review site's writing-card switch runs. A round is given a list of conditions and
+# rotates them across its slots (assign_lenses); a condition is 'none', one card id, or ids
+# joined with '+' for cards used together. The first plan (2026-09-10) rotated a no-card
+# control against each card. QC then chose to give every story both at once, and on 2026-09-11
+# to send the two skills whole (SKILL.md and the references it reads for writing) instead of
+# the short cards, still as brief text all four models receive. A single condition covers every
+# slot, and the comparison is with 2026-09-10-r03, written under the same format and taste
+# without cards. Rotation stays available through --lenses.
+LENS_EXPERIMENT = ['ning-hao-skill+zhou-xingchi-skill']
 
 # Candidate attributes a format field lands in directly. Anything else the format asks for
 # is kept in Candidate.extra, so adding a field to the format never needs a change here.
@@ -108,13 +120,14 @@ def call(model: str, text: str, dry: bool) -> tuple[str, str | None]:
 
 
 def to_candidate(raw: str, model: str, round_id: str, slot: str, taste: str, *,
-                 spec: dict | None = None, max_chars: int | None = None) -> store.Candidate:
+                 spec: dict | None = None, max_chars: int | None = None, lens: str | None = None) -> store.Candidate:
     """Map one model reply onto a Candidate, using the output format to find its fields."""
     spec = spec or brief_mod.load_format()
     body_key = spec.get('body_field', 'outline')
     body_keys = [body_key] + [k for k in spec.get('body_aliases', []) if k != body_key]
     base = dict(id=store.new_id(), round=round_id, slot=slot, model=model, taste_context=taste,
-                max_chars=max_chars, format_version=f"{spec.get('name', 'default')}@{spec.get('version', '?')}")
+                max_chars=max_chars, format_version=f"{spec.get('name', 'default')}@{spec.get('version', '?')}",
+                lens=lens)
     outlines = parse_outlines(raw)
     if not outlines:
         return store.Candidate(**base, title='(unparsed)', parse_failed=True, raw=raw)
@@ -128,7 +141,7 @@ def to_candidate(raw: str, model: str, round_id: str, slot: str, taste: str, *,
                                parse_failed=True, raw=raw)
     extra = {f['key']: o[f['key']] for f in spec.get('fields', [])
              if f['key'] in o and f['key'] not in KNOWN_FIELDS and f['key'] != body_key}
-    return store.Candidate(
+    c = store.Candidate(
         **base,
         title=str(o.get('title', '')).strip(),
         premise_line=str(o.get('premise_line', '')).strip(),
@@ -143,6 +156,24 @@ def to_candidate(raw: str, model: str, round_id: str, slot: str, taste: str, *,
         extra=extra,
         raw=raw,
     )
+    if looks_cut_off(body, max_chars or store.MAX_OUTLINE_CHARS):
+        # Valid JSON can still carry a story that stops mid-sentence. In 2026-09-10-r02 one
+        # rewrite came back as 「艾莎给软软算塔罗，翻出」 and was scored as a real, if thin,
+        # candidate. Flag it like unparseable output so the review site marks it, and keep
+        # the raw reply, which is only written for flagged candidates.
+        c.parse_failed = True
+    return c
+
+
+# Characters a finished outline can end on: sentence stops, closing quotes and brackets.
+_FINISHED_END = re.compile(r'[。！？!?.…～~」』”"’\'）)\]】》]$')
+
+
+def looks_cut_off(body: str, ceiling: int) -> bool:
+    """Short and unfinished. Either alone is normal: outlines may be brief, and a long
+    outline may end without a full stop. Together they mean the reply broke off."""
+    text = body.strip()
+    return len(re.sub(r'\s', '', text)) < ceiling * 0.25 and not _FINISHED_END.search(text)
 
 
 def draw_max_chars(slots: list[str], lo: int, hi: int, rng: random.Random) -> dict:
@@ -159,11 +190,39 @@ def draw_max_chars(slots: list[str], lo: int, hi: int, rng: random.Random) -> di
     return {slot: rng.randint(lo, hi) for slot in slots}
 
 
+def pick_lens_offset(conditions: list[str], rng: random.Random, *, dry: bool) -> int:
+    """Where this round starts the card rotation.
+
+    Slot i draws conditions[(i + offset) % k], so k rounds with k different offsets give
+    every slot every condition once, which is what tells a card's effect apart from its
+    slot's. Offsets already spent in the current cycle, read from earlier rounds with the same
+    conditions, are not drawn again; within the rest the draw is random, so which slot carries
+    which card cannot be worked out from the round number."""
+    k = len(conditions)
+    used = []
+    for path in sorted(store.CANDIDATES.glob('*/round.json')) if store.CANDIDATES.exists() else []:
+        try:
+            meta = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        lz = meta.get('lenses') or {}
+        if lz.get('conditions') == conditions and bool(meta.get('dry_run')) == dry and isinstance(lz.get('offset'), int):
+            used.append(lz['offset'])
+    spent = set(used[len(used) - len(used) % k:])
+    return rng.choice([o for o in range(k) if o not in spent])
+
+
+def assign_lenses(slots: list[str], conditions: list[str], offset: int) -> dict:
+    """One condition per slot. Like the ceiling, it is per slot rather than per story, so the
+    four models on a slot still receive identical bytes."""
+    return {slot: conditions[(i + offset) % len(conditions)] for i, slot in enumerate(slots)}
+
+
 def run(*, models: list[str] | None = None, slots: list[str] | None = None, expansion: bool = True,
         taste: bool = True, dry: bool = False, min_chars: int = store.MAX_OUTLINE_CHARS,
         max_chars: int = store.MAX_OUTLINE_CHARS, fmt: str = brief_mod.DEFAULT_FORMAT,
         waitlist: bool = True, seed: int | None = None, per_model: int = PER_MODEL_CONCURRENCY,
-        log=print) -> dict:
+        lenses: list[str] | None = None, log=print) -> dict:
     """Run one round and return its round.json.
 
     Raises ValueError for bad arguments and RuntimeError when a model the baseline needs
@@ -178,10 +237,27 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
         raise ValueError(f'unknown slot(s): {", ".join(bad)}; expected {", ".join(BASE_SLOTS)}')
     if isinstance(per_model, bool) or not isinstance(per_model, int) or per_model < 1:
         raise ValueError(f'per_model must be a positive integer; got {per_model!r}')
+    if lenses is not None:
+        lenses = list(lenses)
+        if not lenses or len(set(lenses)) != len(lenses):
+            raise ValueError(f'lenses must be a non-empty list without repeats; got {lenses!r}')
 
     spec = brief_mod.load_format(fmt)
     all_slots = slots + (['expansion'] if expansion else [])
-    caps = draw_max_chars(all_slots, min_chars, max_chars, random.Random(seed))
+    rng = random.Random(seed)
+    caps = draw_max_chars(all_slots, min_chars, max_chars, rng)   # drawn first, so a seed still gives the same ceilings
+    # A draft card is allowed in a dry run only; a live brief carries cards QC has approved.
+    conditions = {cond: brief_mod.load_lenses(cond, allow_draft=dry) for cond in (lenses or [])}
+    cards = {card['id']: card for group in conditions.values() for card in group}
+    lens_offset = pick_lens_offset(lenses, rng, dry=dry) if lenses else None
+    lens_by_slot = assign_lenses(all_slots, lenses, lens_offset) if lenses else {}
+
+    def lens_of(slot: str) -> tuple[list, str | None]:
+        """(cards for the brief, label for the candidate). No cards this round: ([], None)."""
+        if not lenses:
+            return [], None
+        group = conditions[lens_by_slot[slot]]
+        return group, brief_mod.lens_label(group)
 
     if not dry:
         blocked = [(m, ADAPTERS[m].available()[1]) for m in models if not ADAPTERS[m].available()[0]]
@@ -194,7 +270,8 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
     taste_s = 'on' if taste else 'off'
 
     # One brief per slot; every model on that slot gets it unchanged.
-    briefs = {slot: brief_mod.build(taste=taste, slot=slot, max_chars=caps[slot], fmt=spec) for slot in slots}
+    briefs = {slot: brief_mod.build(taste=taste, slot=slot, max_chars=caps[slot], fmt=spec, lens=lens_of(slot)[0])
+              for slot in slots}
     jobs: list[tuple] = [('base', m, slot) for slot in slots for m in models]
 
     expansion_model = None
@@ -202,7 +279,8 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
         expansion_model = MODEL_ORDER[round_index() % len(MODEL_ORDER)]
         if expansion_model not in models:
             expansion_model = models[0]
-        briefs['expansion'] = brief_mod.build(taste=taste, slot='expansion', max_chars=caps['expansion'], fmt=spec)
+        briefs['expansion'] = brief_mod.build(taste=taste, slot='expansion', max_chars=caps['expansion'], fmt=spec,
+                                              lens=lens_of('expansion')[0])
         jobs.append(('base', expansion_model, 'expansion'))
 
     # Every shortlisted candidate comes back, to the model that wrote it (QC, 2026-09-10).
@@ -222,8 +300,48 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
         + (f' + {rewrite_n} waitlist rewrite(s)' if rewrite_n else ''))
     log('[round] outline ceiling per slot: ' + '  '.join(f'{s}={caps[s]}' for s in all_slots))
     log(f'[round] up to {per_model} call(s) in flight per model; the models run side by side')
+    if lenses and len(lenses) == 1:
+        log(f'[round] writing-method cards in every brief, waitlist rewrites included: {lenses[0]}')
+    elif lenses:
+        log(f'[round] writing-method cards rotated across the slots: {", ".join(lenses)}. '
+            'Which slot drew which goes to round.json, not to this log')
     if skipped:
         log(f'[round] waitlist left for next round, model unavailable: {", ".join(skipped)}')
+
+    # Written before the first call and again when the round ends. A round cut off halfway, as
+    # 2026-09-10-r03 was when the review server stopped, used to leave no round.json at all, so
+    # its format, ceilings and brief hashes were lost; now they survive, with finished: null.
+    meta = {
+        'round': round_id,
+        'created': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
+        'finished': None,
+        'dry_run': dry,
+        'taste_context': taste_s,
+        'models': models,
+        'slots': slots,
+        'expansion_model': expansion_model,
+        'format': {'name': spec['name'], 'version': spec['version'], 'sha256': spec['sha256']},
+        'max_chars_range': [min_chars, max_chars],
+        'max_chars': caps,
+        'seed': seed,
+        'per_model_concurrency': per_model,
+        # Which condition each slot drew. Kept here and on each candidate, and out of the page
+        # until the round is judged.
+        'lenses': ({'conditions': lenses, 'offset': lens_offset, 'by_slot': lens_by_slot,
+                    'cards': {lid: {k: card[k] for k in ('name', 'status', 'sha256')} for lid, card in cards.items()}}
+                   if lenses else None),
+        # The identical-input claim, made checkable rather than asserted.
+        'brief_sha256': {slot: brief_mod.sha256(text) for slot, text in briefs.items()},
+        'calls': base_n,
+        'written': 0,
+        'failed': 0,
+        'parse_failed': 0,
+        'median_length': 0,
+        'waitlist_rewrites': [],
+        'waitlist_retired': [],
+        'waitlist_skipped': skipped,
+    }
+    store.write_round_meta(round_id, meta)
 
     # One gate per model: jobs for different models never wait on each other.
     gates = {model: threading.BoundedSemaphore(per_model) for _, model, _ in jobs}
@@ -233,8 +351,11 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
         with gates[model]:
             if kind == 'base':
                 return call(model, briefs[target], dry)
+            # In a round with writing cards, a waitlist rewrite gets what its slot got this round,
+            # so every story the round produces carries them. Otherwise it keeps its parent's.
             return rewrite_mod.run(target, 'waitlist', round_id=round_id, call=call,
-                                   to_candidate=to_candidate, dry=dry, fmt=spec)
+                                   to_candidate=to_candidate, dry=dry, fmt=spec,
+                                   lens=lens_of(target.slot) if target.slot in lens_by_slot else None)
 
     written, rewritten, retired, rewrite_meta = [], [], [], []
     failed = unparsed = 0
@@ -254,7 +375,8 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
                     continue
                 # Written as it arrives, not after the round. A long round used to show no
                 # progress at all and would have lost every finished story to one interrupt.
-                c = to_candidate(raw, model, round_id, target, taste_s, spec=spec, max_chars=caps[target])
+                c = to_candidate(raw, model, round_id, target, taste_s, spec=spec, max_chars=caps[target],
+                                 lens=lens_of(target)[1])
                 unparsed += int(c.parse_failed)
                 store.write(c)
                 written.append(c)
@@ -274,35 +396,21 @@ def run(*, models: list[str] | None = None, slots: list[str] | None = None, expa
             unparsed += int(child.parse_failed)
             rewritten.append(child)
             rewrite_meta.append({'id': child.id, 'parent': target.id, 'mode': 'waitlist', 'brief_sha256': sha,
-                                 'max_chars': child.max_chars, 'revisit_count': child.revisit_count})
+                                 'max_chars': child.max_chars, 'revisit_count': child.revisit_count,
+                                 'lens': child.lens})
             log(f'  ok   {model:9} rewrite {target.id} -> {child.id}  '
                 f'{child.words()}/{child.ceiling()} 字  {child.title}')
 
     lengths = sorted(c.words() for c in written)
-    meta = {
-        'round': round_id,
-        'created': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
-        'dry_run': dry,
-        'taste_context': taste_s,
-        'models': models,
-        'slots': slots,
-        'expansion_model': expansion_model,
-        'format': {'name': spec['name'], 'version': spec['version'], 'sha256': spec['sha256']},
-        'max_chars_range': [min_chars, max_chars],
-        'max_chars': caps,
-        'seed': seed,
-        'per_model_concurrency': per_model,
-        # The identical-input claim, made checkable rather than asserted.
-        'brief_sha256': {slot: brief_mod.sha256(text) for slot, text in briefs.items()},
-        'calls': base_n,
+    meta.update({
+        'finished': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
         'written': len(written),
         'failed': failed,
         'parse_failed': unparsed,
         'median_length': lengths[len(lengths) // 2] if lengths else 0,
         'waitlist_rewrites': rewrite_meta,
         'waitlist_retired': retired,
-        'waitlist_skipped': skipped,
-    }
+    })
     store.write_round_meta(round_id, meta)
 
     log(f'[round] wrote {len(written)} stories'
@@ -332,6 +440,9 @@ def main() -> int:
     ap.add_argument('--seed', type=int, default=None, help='fix the ceiling draw; the drawn values are recorded either way')
     ap.add_argument('--per-model', type=int, default=PER_MODEL_CONCURRENCY,
                     help='calls one model may have in flight at once; models always run side by side')
+    ap.add_argument('--lenses', default=None,
+                    help='writing-method cards to rotate across the slots, e.g. none,ning-hao,zhou-xingchi '
+                         '(cards in ResearchAssets/story-lenses/; a live round needs them approved)')
     args = ap.parse_args()
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -347,6 +458,7 @@ def main() -> int:
             expansion=not args.no_expansion, taste=not args.no_taste, dry=args.dry_run,
             min_chars=args.min_chars, max_chars=args.max_chars, fmt=args.format,
             waitlist=not args.no_waitlist, seed=args.seed, per_model=args.per_model,
+            lenses=[s.strip() for s in args.lenses.split(',') if s.strip()] if args.lenses else None,
             log=lambda line: print(line, flush=True))
     except (ValueError, RuntimeError) as exc:
         sys.exit(f'[round] {exc}')

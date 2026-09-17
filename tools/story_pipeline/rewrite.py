@@ -54,18 +54,42 @@ def rewrite_request(parent: store.Candidate, mode: str) -> dict:
     }
 
 
-def build_brief(parent: store.Candidate, mode: str, *, fmt=brief_mod.DEFAULT_FORMAT) -> tuple[str, int, dict]:
+def lens_for(parent: store.Candidate, *, dry: bool = False) -> tuple[list, str | None]:
+    """The writing-method cards the parent was written under, so a rewrite keeps the conditions
+    its author worked in and only QC's notes are new. Returns (cards, label for the rewrite).
+    A card since removed, or sent back to draft, is left out rather than blocking QC's rewrite,
+    and the rewrite's label records only the cards it actually got."""
+    if not parent.lens:
+        return [], None
+    cards = []
+    for part in parent.lens.split('+'):
+        lid = part.split('@')[0]
+        if not lid or lid == brief_mod.NO_LENS:
+            continue
+        try:
+            cards.append(brief_mod.load_lens(lid, allow_draft=dry))
+        except (OSError, ValueError):
+            continue
+    return cards, brief_mod.lens_label(cards)
+
+
+def build_brief(parent: store.Candidate, mode: str, *, fmt=brief_mod.DEFAULT_FORMAT,
+                lens: dict | list | None = None) -> tuple[str, int, dict]:
     """The slot brief the parent was written under, at its rewrite ceiling, plus QC's notes."""
     spec = fmt if isinstance(fmt, dict) else brief_mod.load_format(fmt)
     ceiling = ceiling_for(parent)
     text = brief_mod.build(taste=parent.taste_context != 'off', slot=parent.slot, max_chars=ceiling,
-                           fmt=spec, rewrite=rewrite_request(parent, mode))
+                           fmt=spec, rewrite=rewrite_request(parent, mode), lens=lens)
     return text, ceiling, spec
 
 
 def run(parent: store.Candidate, mode: str, *, round_id: str, call, to_candidate,
-        dry: bool = False, fmt=brief_mod.DEFAULT_FORMAT, now: str | None = None):
+        dry: bool = False, fmt=brief_mod.DEFAULT_FORMAT, now: str | None = None,
+        lens: tuple | None = None):
     """Rewrite `parent` once.
+
+    `lens`, when given as (cards, label), replaces the cards the parent was written under:
+    run_round.py passes it so a waitlist rewrite in a round with writing cards gets that round's.
 
     Returns (child, brief_sha256), or (None, None) when a waitlist lineage has already been
     rewritten MAX_REVISITS times and is retired instead. `call` and `to_candidate` come from
@@ -81,13 +105,14 @@ def run(parent: store.Candidate, mode: str, *, round_id: str, call, to_candidate
         store.revisit(parent, now=now)   # passes MAX_REVISITS, so this retires it as never_chosen
         return None, None
 
-    text, ceiling, spec = build_brief(parent, mode, fmt=fmt)
+    cards, label = lens if lens is not None else lens_for(parent, dry=dry)
+    text, ceiling, spec = build_brief(parent, mode, fmt=fmt, lens=cards)
     raw, err = call(parent.model, text, dry)
     if err:
         raise RuntimeError(f'{parent.model} could not rewrite {parent.id}: {err}')
 
     child = to_candidate(raw, parent.model, round_id, parent.slot, parent.taste_context,
-                         spec=spec, max_chars=ceiling)
+                         spec=spec, max_chars=ceiling, lens=label)
     child.parent = parent.id
     child.rewrite = mode
     if mode == 'waitlist':

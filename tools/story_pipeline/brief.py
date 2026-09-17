@@ -37,6 +37,14 @@ CONFIG = ROOT / 'website' / 'src' / 'data' / 'characters.config.mjs'
 # own ablation rather than riding along with another change.
 TASTE_DIR = ROOT / '.agents' / 'skills' / 'qc-taste' / 'references' / 'taste'
 TASTE_LANG = 'en'
+# Writing-method cards, "lenses" (2026-09-10). Each is a short card distilled from a
+# third-party screenwriting skill and tried as a variable of its own: run_round.py rotates
+# the cards, and a no-card control, across the slots of a round. The cards live in the
+# private submodule because the skills behind them are licensed for private, non-derivative
+# use, so this public file only knows where to look. A card reaches a live brief only once
+# QC has set its status to approved, the same bar a taste rule has to clear.
+LENS_DIR = ROOT / 'ResearchAssets' / 'story-lenses'
+NO_LENS = 'none'
 
 
 # --------------------------------------------------------------------------- sources
@@ -246,7 +254,9 @@ SLOTS = {
 
 每个角色的矛盾都写在上面的设定里。平时它是个有趣的反差；你要写的是它失控、或者被人当真、或者代价终于到账的那一次。
 
-《Haide 变成狗的那一天》就是这么来的：一句"再犯就变成狗"的誓言本来是玩笑，然后当真了。""",
+《Haide 变成狗的那一天》就是这么来的：一句"再犯就变成狗"的誓言本来是玩笑，然后当真了。
+
+这个位子不是续集，不要接任何已有故事。""",
     },
     'escalation': {
         'zh': '放大位',
@@ -255,16 +265,20 @@ SLOTS = {
 
 不要发明新事实，要放大旧事实。《午夜的金色法拉利》是这个形状：一件本来就在设定里的事，被推到凌晨两点、没人敢承认的车速。
 
-**例子只说明形状。** 不要去放大例子里的同一件事，也不要去放大已有故事已经放大过的事——挑一条还没人动过的。""",
+**例子只说明形状。** 不要去放大例子里的同一件事，也不要去放大已有故事已经放大过的事——挑一条还没人动过的。
+
+这个位子不是续集，不要接任何已有故事。""",
     },
     'transposition': {
         'zh': '移植位',
         'brief': """\
-把全员或其中几个人搬进一个**不属于幼儿园的类型**：飞车党、黑帮、法庭、恐怖片、体育解说、宫斗、赛博朋克、纪录片——越不搭越好。
+把全员或其中几个人搬进一个**不属于幼儿园的类型**：飞车党、黑帮、法庭、体育解说、宫斗、赛博朋克、纪录片——越不搭越好。
 
 保留每个人的身份锚点：主题色、招牌道具、说话方式、核心矛盾。移植的是舞台，不是人，读者要能一眼认出谁是谁。
 
-《幼儿园四大魔女》就是这么来的。这一类通常是**番外**，但如果你能让它成立为记忆事件也可以。""",
+《幼儿园四大魔女》就是这么来的。这一类通常是**番外**，但如果你能让它成立为记忆事件也可以。
+
+这个位子不是续集，不要接任何已有故事。""",
     },
 }
 
@@ -274,14 +288,19 @@ EXPANSION_BRIEF = """\
 先看上面的「可复用的客串角色」清单：如果其中某位就能撑起这个故事，优先用他们，并在 `new_elements` 里写 `reuse: <名字>`。只有在现有客串都不合适时才提出全新的人或地点。
 
 新地点的代价远高于新人物：新地点要单独绘制场景参考图并生成地点页。如果新人物和新地点能达成同一个效果，选新人物。
+
+这个位子不是续集，不要接任何已有故事。
 """
 
+# Only formats with a premise field use these (v1 did, v2 does not). The "not a sequel"
+# guard used to ride along in them, so dropping the field in v2 would have dropped the guard
+# too; it now lives in each slot's own task text above, whatever the format asks for.
 PREMISE_HINT = {
     'consequence': '说明你接的是哪一篇的哪个残留。',
-    'contradiction': '说明你用的是谁的哪一条矛盾。这个位子不是续集，不要接任何已有故事。',
-    'escalation': '说明你放大的是哪一条既有事实。这个位子不是续集，不要接任何已有故事。',
-    'transposition': '说明你移植进了什么类型。这个位子不是续集，不要接任何已有故事。',
-    'expansion': '说明引入的新人物或新地点是什么、为什么非它不可。这个位子不是续集，不要接任何已有故事。',
+    'contradiction': '说明你用的是谁的哪一条矛盾。',
+    'escalation': '说明你放大的是哪一条既有事实。',
+    'transposition': '说明你移植进了什么类型。',
+    'expansion': '说明引入的新人物或新地点是什么、为什么非它不可。',
 }
 
 FORMATS = Path(__file__).resolve().parent / 'formats'
@@ -313,6 +332,19 @@ def load_format(name: str = DEFAULT_FORMAT) -> dict:
     if spec.setdefault('body_field', 'outline') not in keys:
         raise ValueError(f"format {name!r}: body_field {spec['body_field']!r} is not one of its fields")
     return spec
+
+
+def format_specs() -> dict:
+    """Every format ever used, current and archived, keyed name@version. The review site shows
+    each candidate's fields by the format it was written under, so older rounds keep theirs."""
+    out = {}
+    for path in sorted(FORMATS.rglob('*.json')):
+        try:
+            spec = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        out[f"{spec.get('name', path.stem)}@{spec.get('version', '?')}"] = spec
+    return out
 
 
 def render_output_spec(fmt_spec: dict, *, slot: str, max_chars: int) -> str:
@@ -362,10 +394,118 @@ def load_taste(domain: str = 'story', lang: str = TASTE_LANG) -> str:
     return '\n\n'.join(p.read_text(encoding='utf-8').strip() for p in parts)
 
 
+LENS_ID = re.compile(r'[a-z0-9][a-z0-9-]*')
+
+
+def load_lens(lens_id: str, *, allow_draft: bool = False) -> dict:
+    """One card: its body exactly as a brief carries it, plus the metadata that stays out of
+    the brief. A card whose status is not `approved` is refused unless allow_draft, which only
+    dry runs pass. The sha256 covers the body alone, so approving a card does not change it."""
+    if not isinstance(lens_id, str) or lens_id == NO_LENS or not LENS_ID.fullmatch(lens_id):
+        raise ValueError(f'not a lens card id: {lens_id!r}')
+    path = LENS_DIR / f'{lens_id}.md'
+    if not path.exists():
+        raise ValueError(f'no lens card {lens_id!r} in {LENS_DIR}')
+    text = path.read_text(encoding='utf-8').replace('\r\n', '\n')
+    m = re.match(r'^---\n(.*?)\n---\n', text, re.S)
+    if not m:
+        raise ValueError(f'lens card {lens_id!r} has no frontmatter')
+    meta = {}
+    for line in m.group(1).splitlines():
+        key, sep, value = line.partition(':')
+        if sep:
+            meta[key.strip()] = value.strip()
+    if meta.get('id', lens_id) != lens_id:
+        raise ValueError(f"lens card {path.name} says its id is {meta['id']!r}")
+    # `include` lists files under LENS_DIR whose whole text follows the body, each in a fence of
+    # its own. QC chose (2026-09-11) to send two skills whole rather than as short cards, so a
+    # card can be a thin wrapper around verbatim copies of a skill's files.
+    includes = [p.strip() for p in (meta.get('include') or '').split(',') if p.strip()]
+    parts = [text[m.end():].strip()] + [_included_file(lens_id, rel) for rel in includes]
+    body = '\n\n'.join(p for p in parts if p)
+    if not body:
+        raise ValueError(f'lens card {lens_id!r} is empty')
+    status = meta.get('status') or 'draft'
+    if status != 'approved' and not allow_draft:
+        raise ValueError(f'lens card {lens_id!r} is still {status}; QC approves a card before a live round may use it')
+    # Covers the included files too, so editing a copied skill changes the card's version.
+    sha = hashlib.sha256(body.encode('utf-8')).hexdigest()
+    return {'id': lens_id, 'name': meta.get('name') or lens_id,
+            'name_en': meta.get('name_en') or meta.get('name') or lens_id,
+            'status': status, 'text': body, 'sha256': sha, 'label': f'{lens_id}@{sha[:8]}',
+            'includes': includes}
+
+
+def _included_file(lens_id: str, rel: str) -> str:
+    """One included file, whole, fenced with more backticks than the file itself uses."""
+    base = LENS_DIR.resolve()
+    path = (LENS_DIR / rel).resolve()
+    if base not in path.parents:
+        raise ValueError(f'lens card {lens_id!r} includes {rel!r}, which is outside {LENS_DIR}')
+    if not path.is_file():
+        raise ValueError(f'lens card {lens_id!r} includes {rel!r}, which does not exist')
+    content = path.read_text(encoding='utf-8').replace('\r\n', '\n').strip()
+    fence = '`' * max(4, max((len(run) for run in re.findall(r'`{3,}', content)), default=0) + 1)
+    shown = Path(rel).as_posix().removeprefix('skills/')
+    return f'文件 `{shown}`：\n\n{fence}markdown\n{content}\n{fence}'
+
+
+def list_lenses() -> list[dict]:
+    """Every readable card on disk and its status, for the review site."""
+    out = []
+    for path in sorted(LENS_DIR.glob('*.md')) if LENS_DIR.is_dir() else []:
+        try:
+            card = load_lens(path.stem, allow_draft=True)
+        except (OSError, ValueError):
+            continue   # README.md, or a card broken by hand
+        out.append({k: card[k] for k in ('id', 'name', 'name_en', 'status', 'label')})
+    return out
+
+
+def load_lenses(condition: str, *, allow_draft: bool = False) -> list[dict]:
+    """The cards one condition names: [] for the no-card control, otherwise one card per id,
+    with '+' joining cards used together (QC chose on 2026-09-10 to give every story both)."""
+    if condition == NO_LENS:
+        return []
+    ids = condition.split('+') if isinstance(condition, str) else []
+    if not ids or len(set(ids)) != len(ids):
+        raise ValueError(f'not a lens condition: {condition!r}')
+    return [load_lens(lid, allow_draft=allow_draft) for lid in ids]
+
+
+def lens_label(cards: list[dict]) -> str:
+    """What a candidate records: 'none', or each card's id@sha8 joined with '+'."""
+    return '+'.join(card['label'] for card in cards) or NO_LENS
+
+
+_NUMERALS = '一二三四五六七八九'
+
+
+def render_lens(cards: list[dict], *, taste: bool) -> list[str]:
+    """The cards sit under a line that ranks them below the rules and the taste. The director
+    each came from is never named, so the models borrow a method rather than imitate films."""
+    ground, back = ('「世界与规则」或「创作偏好」', '那两部分') if taste else ('「世界与规则」', '「世界与规则」')
+    if len(cards) == 1:
+        return ['## 写法参考', '',
+                f'下面是一份搭故事的方法，只管结构，不代表这个项目作者的偏好。它和{ground}冲突时，以{back}为准。'
+                '里面的表格和检查是给你动笔前后自己用的，不要写进输出，也不要在输出里提到这份参考。', '',
+                cards[0]['text'], '']
+    count = '两' if len(cards) == 2 else _NUMERALS[len(cards) - 1]
+    out = ['## 写法参考', '',
+           f'下面是{count}份搭故事的方法，一起用。它们只管结构，不代表这个项目作者的偏好。它们和{ground}冲突时，'
+           f'以{back}为准；彼此之间有出入时，自己取舍。'
+           '里面的表格和检查是给你动笔前后自己用的，不要写进输出，也不要在输出里提到这些参考。', '']
+    for i, card in enumerate(cards):
+        out += [f'### 参考{_NUMERALS[i]}', '', card['text'], '']
+    return out
+
+
 def render(characters, scenes, guests, stories, *, taste: bool, slot: str,
-           max_chars: int = DEFAULT_MAX_CHARS, fmt: dict | None = None, rewrite: dict | None = None) -> str:
+           max_chars: int = DEFAULT_MAX_CHARS, fmt: dict | None = None, rewrite: dict | None = None,
+           lens: dict | list | None = None) -> str:
     """One brief. `slot` is a key of SLOTS, or 'expansion'. `rewrite`, when given, turns it
-    into a request to rewrite one earlier outline with QC's notes (see rewrite.py)."""
+    into a request to rewrite one earlier outline with QC's notes (see rewrite.py). `lens`,
+    when given, is a writing-method card from load_lens, or a list of them."""
     # Not called `spec`: further down, `spec` is the slot's task from SLOTS.
     fmt_spec = fmt or load_format()
     out: list[str] = ['# QC Kindergarten 故事大纲任务', '', RULES.replace('<<MAX_CHARS>>', str(max_chars)), '## 角色', '']
@@ -395,8 +535,11 @@ def render(characters, scenes, guests, stories, *, taste: bool, slot: str,
         out.append(f'- `{sc.file}` — {sc.zh} / {sc.en}')
     out.append('')
 
-    out += ['## 已有故事', '',
-            '`nearest` 要从这里挑一篇同类的。不要重复它们，但也不要靠"写得更小"来制造区别。', '']
+    # Only a format that asks for `nearest` is told how to pick it (v1 did; v2 does not).
+    format_keys = {f['key'] for f in fmt_spec['fields']}
+    stories_intro = ('`nearest` 要从这里挑一篇同类的。不要重复它们，但也不要靠"写得更小"来制造区别。'
+                     if 'nearest' in format_keys else '不要重复它们。')
+    out += ['## 已有故事', '', stories_intro, '']
     names = {c.slug: c.name for c in characters}
     for st in stories:
         out.append(f"- `{st['slug']}`（{st['kind']}）**{st['title']}** — {st['first']}")
@@ -411,6 +554,11 @@ def render(characters, scenes, guests, stories, *, taste: bool, slot: str,
         out += ['## 创作偏好', '',
                 '以下是这个项目作者的创作偏好，来自对其历史决策的提炼。它描述作者会选什么，不是质量标准。', '',
                 load_taste('story'), '']
+
+    # After the taste it defers to, before the task it serves.
+    cards = [lens] if isinstance(lens, dict) else list(lens or [])
+    if cards:
+        out += render_lens(cards, taste=taste)
 
     if slot == 'expansion':
         out += ['## 你的任务：扩展位', '', EXPANSION_BRIEF]
@@ -427,7 +575,7 @@ def render(characters, scenes, guests, stories, *, taste: bool, slot: str,
 
 
 def build(*, taste: bool = True, slot: str = 'contradiction', max_chars: int = DEFAULT_MAX_CHARS,
-          fmt: str | dict | None = None, rewrite: dict | None = None) -> str:
+          fmt: str | dict | None = None, rewrite: dict | None = None, lens: dict | list | None = None) -> str:
     """The brief for one slot. Deterministic: same sources + same slot = same bytes.
 
     No seed and no combo assignment any more. Round r01 handed every model a
@@ -444,7 +592,7 @@ def build(*, taste: bool = True, slot: str = 'contradiction', max_chars: int = D
         raise ValueError(f'max_chars must be a positive integer; got {max_chars!r}')
     fmt_spec = fmt if isinstance(fmt, dict) else load_format(fmt or DEFAULT_FORMAT)
     return render(characters, load_scenes(), load_guests(), load_stories(), taste=taste, slot=slot,
-                  max_chars=max_chars, fmt=fmt_spec, rewrite=rewrite)
+                  max_chars=max_chars, fmt=fmt_spec, rewrite=rewrite, lens=lens)
 
 
 def sha256(text: str) -> str:
@@ -459,6 +607,9 @@ def main():
     ap.add_argument('--max-chars', type=int, default=DEFAULT_MAX_CHARS, help='outline ceiling stated in the brief')
     ap.add_argument('--format', default=DEFAULT_FORMAT, help='output format, formats/<name>.json')
     ap.add_argument('--slots', action='store_true', help='list the slots and exit')
+    ap.add_argument('--lens', default=None,
+                    help='add writing-method cards from ResearchAssets/story-lenses/, several joined with + '
+                         '(drafts allowed here)')
     args = ap.parse_args()
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -469,9 +620,11 @@ def main():
         print(f"{'expansion':15} 扩展位  {EXPANSION_BRIEF.splitlines()[0]}")
         return 0
 
-    text = build(taste=not args.no_taste, slot=args.slot, max_chars=args.max_chars, fmt=args.format)
+    cards = load_lenses(args.lens, allow_draft=True) if args.lens else []
+    text = build(taste=not args.no_taste, slot=args.slot, max_chars=args.max_chars, fmt=args.format, lens=cards)
     print(text)
-    print(f'\n<!-- slot={args.slot} {len(text)} chars, sha256 {sha256(text)[:12]} -->', file=sys.stderr)
+    card = f' lens={lens_label(cards)} ({", ".join(c["status"] for c in cards)})' if cards else ''
+    print(f'\n<!-- slot={args.slot}{card} {len(text)} chars, sha256 {sha256(text)[:12]} -->', file=sys.stderr)
     return 0
 
 
