@@ -59,6 +59,25 @@ const s = t(lang);
     </div>
     <Places lang={lang} />
   </section>
+
+  <section id="game" class="section wrap">
+    <a class="game-card" href={`/${lang}/game/`}>
+      <div class="game-copy">
+        <h2>{s.game.title}</h2>
+        <p>{s.game.sub}</p>
+        <span class="cta">{s.game.cardCta} →</span>
+      </div>
+      <img
+        class="game-art"
+        src="/game/haide-card.png"
+        alt=""
+        width="120"
+        height="96"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+  </section>
 </Base>
 
 <style>
@@ -96,5 +115,55 @@ const s = t(lang);
   }
   .band {
     background: var(--panel);
+  }
+
+  /* Entry card. The sprite sheet is used as the art on purpose: four frames in a
+     row reads as a filmstrip, and it is a file the page already ships. */
+  .game-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1.5rem;
+    padding: clamp(1.1rem, 3vw, 1.8rem);
+    border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+    border-radius: 12px;
+    background: linear-gradient(100deg, var(--panel), transparent 70%);
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+  .game-card:hover {
+    border-color: currentColor;
+    transform: translateY(-2px);
+  }
+  .game-copy h2 {
+    margin: 0;
+  }
+  .game-copy p {
+    margin: 0.4rem 0 0;
+    color: var(--ink-2);
+    max-width: 44ch;
+  }
+  .cta {
+    display: inline-block;
+    margin-top: 0.8rem;
+    font-weight: 600;
+  }
+  .game-art {
+    height: 88px;
+    width: auto;
+    image-rendering: pixelated;
+  }
+  @media (max-width: 640px) {
+    .game-card {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .game-art {
+      height: 72px;
+      justify-self: start;
+    }
   }
 </style>

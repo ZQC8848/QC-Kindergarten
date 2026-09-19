@@ -1,5 +1,5 @@
 /**
- * Sanity checks on the built dist/, run at the end of `npm run verify`.
+ * Sanity checks on the build output, run at the end of `npm run verify`.
  *
  * Why this exists: the site deploys with `vercel build --prebuilt`, so the dist that goes
  * live is built on whoever runs the deploy, while CI builds its own copy on Linux and
@@ -14,7 +14,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(site, 'dist');
+/**
+ * Where the shipped HTML actually lands. Since the Vercel adapter was added for
+ * the leaderboard API, `astro build` writes the pages to `.vercel/output/static`
+ * (what `vercel deploy --prebuilt` uploads) and leaves only a `client/` copy
+ * under dist/. Resolve whichever exists so this keeps checking the real
+ * artefact rather than an empty folder.
+ */
+const CANDIDATES = [
+  path.join(site, '.vercel', 'output', 'static'),
+  path.join(site, 'dist', 'client'),
+  path.join(site, 'dist'),
+];
+const dist = CANDIDATES.find((d) => fs.existsSync(d) && fs.existsSync(path.join(d, '404.html')));
+const distLabel = dist ? path.relative(site, dist).split(path.sep).join('/') : 'dist';
 
 const problems = [];
 const note = (page, message) => problems.push(`${page}: ${message}`);
@@ -26,8 +39,9 @@ function htmlFiles(dir) {
   });
 }
 
-if (!fs.existsSync(dist)) {
-  console.error('[check-build] dist/ not found; run `npm run build` first');
+if (!dist) {
+  console.error('[check-build] no build output found; run `npm run build` first');
+  console.error('  looked in: ' + CANDIDATES.map((d) => path.relative(site, d)).join(', '));
   process.exit(1);
 }
 
@@ -65,15 +79,15 @@ for (const file of pages) {
 }
 
 for (const ref of assetRefs) {
-  if (!fs.existsSync(path.join(dist, ref))) problems.push(`og:image ${ref} is not in dist/`);
+  if (!fs.existsSync(path.join(dist, ref))) problems.push(`og:image ${ref} is not in ${distLabel}/`);
 }
 
 for (const required of ['sitemap.xml', 'robots.txt', '404.html']) {
-  if (!fs.existsSync(path.join(dist, required))) problems.push(`dist/${required} is missing`);
+  if (!fs.existsSync(path.join(dist, required))) problems.push(`${distLabel}/${required} is missing`);
 }
 
 if (problems.length) {
-  console.error(`[check-build] ${problems.length} problem(s) in dist/:`);
+  console.error(`[check-build] ${problems.length} problem(s) in ${distLabel}/:`);
   for (const p of problems.slice(0, 40)) console.error(`  ${p}`);
   if (problems.length > 40) console.error(`  … +${problems.length - 40}`);
   process.exit(1);

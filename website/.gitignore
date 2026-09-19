@@ -8,6 +8,8 @@ src/assets/characters/
 src/assets/stories/
 src/assets/scenes/
 src/assets/group-photo.png
+# sync 从 tools/game-art/assets/ 复制过来的游戏资产
+public/game/
 src/data/characters.json
 src/data/stories.json
 .vercel/

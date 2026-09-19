@@ -74,3 +74,19 @@ npx vercel deploy --prebuilt --prod
 - 3D 槽位（现在折叠里放三视图）
 - 合照分层视差（现在是整图 + 热区）
 - 环境全景热区（现在是房间横滑 + 平面图）
+
+## 小游戏与排行榜
+
+页面 `/:lang/game/`，入口在首页底部的卡片和导航。美术资产由 `npm run sync` 从 `tools/game-art/assets/` 复制到 `public/game/`，不要手改 `public/game/`。
+
+物理跑在 360×640 的单位空间里，单位宽度恒定 360，高度由显示框宽高比推出并钳在 600–900——所以手机高屏是多给天空而不是加黑边，桌面是居中的竖屏盒。canvas 的 CSS 尺寸由引擎设置（`src/game/engine.ts` 的 `resize`），CSS 里没有任何预留高度的魔法数字。
+
+排行榜是 `/api/scores/`，**全站唯一一条非预渲染路由**，存储是 Upstash Redis 的 sorted set（Vercel Marketplace 里的 `qc-kindergarten-leaderboard`，Free 档）。
+
+三个坑，改这块之前先看：
+
+1. **路径必须带尾斜杠。** 站点是 `trailingSlash: 'always'`，`/api/scores` 直接 404，而 POST 跟随重定向会丢 body。
+2. **只能用 `process.env` 读 KV 变量，不能用 `import.meta.env`。** 那几个变量在 Vercel 标了 Sensitive，`vercel pull` 拉不到真值、写的是字面量 `"[SENSITIVE]"`；Astro 构建会把它内联进 `import.meta.env.KV_REST_API_URL`，truthy，于是永远盖过运行时真值。线上表现是 500 `UrlError`。顺带这也避免把 token 打进本地构建的产物。
+3. **`astro build` 现在不再输出完整的 `dist/`。** 装了 `@astrojs/vercel` 之后页面写到 `.vercel/output/static/`，`dist/` 只剩一份 `client/` 副本。部署命令不变（本来就是 `vercel build` + `--prebuilt`，function 会一起带上）；`scripts/check-build.mjs` 已改成自动解析真正的产物根。
+
+分数校验（名字剥控制字符、截 16 字；分数 0–9999 整数；按存活时长做宽松合理性检查）**是门槛不是安全**——客户端提交的分数本质可伪造。名字在渲染时转义，不在存储时。

@@ -256,5 +256,28 @@ copyIfNewer(
   path.join(outAssets, 'group-photo.png'),
 );
 
+// ---- game assets ------------------------------------------------------------
+// These go to public/ rather than src/assets: the canvas loads them by URL at
+// runtime, so they must keep stable names and skip Astro's image pipeline.
+// prune() only owns src/assets, so this set is copied without it.
+{
+  const from = path.join(repo, 'tools', 'game-art', 'assets');
+  const to = path.join(site, 'public', 'game');
+  let n = 0;
+  if (fs.existsSync(from)) {
+    for (const f of fs.readdirSync(from)) {
+      if (!/\.(png|json)$/.test(f)) continue;
+      fs.mkdirSync(to, { recursive: true });
+      const src = path.join(from, f);
+      const dst = path.join(to, f);
+      if (!fs.existsSync(dst) || fs.statSync(dst).mtimeMs < fs.statSync(src).mtimeMs) {
+        fs.copyFileSync(src, dst);
+      }
+      n++;
+    }
+  }
+  console.log(`[sync] ${n} game assets`);
+}
+
 const removed = prune();
 console.log(`[sync] done${removed ? ` (pruned ${removed} orphan${removed > 1 ? 's' : ''})` : ''}`);
