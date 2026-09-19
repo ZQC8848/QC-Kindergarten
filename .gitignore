@@ -15,3 +15,7 @@ desktop.ini
 .vscode/
 .idea/
 !.env.example
+
+# game-art generated previews
+tools/game-art/preview*.png
+tools/game-art/prototype/scores.json

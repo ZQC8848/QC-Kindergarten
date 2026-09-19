@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Haide M0</title>
+<style>
+  :root {
+    --bg: #14110c; --panel: #1f1a13; --line: #3a3026; --text: #e9dcc4;
+    --dim: #a08f74; --accent: #c9954a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  body { display: flex; gap: 16px; padding: 16px; align-items: stretch; }
+  #stage { flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+    position: relative; }
+  #board { position: absolute; inset: 0; display: none; flex-direction: column;
+    background: rgba(20, 17, 12, .82); backdrop-filter: blur(2px); border-radius: 6px;
+    padding: 18px 16px; gap: 10px; }
+  #board.open { display: flex; }
+  #board h2 { font-size: 15px; margin: 0; letter-spacing: .06em; }
+  #board .you { color: var(--accent); }
+  #list { flex: 1 1 auto; overflow-y: auto; margin: 0; padding: 0; list-style: none;
+    font-variant-numeric: tabular-nums; }
+  #list li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px;
+    padding: 3px 4px; border-radius: 3px; }
+  #list li.me { background: #3a3026; color: var(--accent); }
+  #list .n { color: var(--dim); }
+  #list .s { font-weight: 700; }
+  #board .empty, #board .err { color: var(--dim); }
+  #board form { display: flex; gap: 6px; }
+  #board input[type=text] { flex: 1 1 auto; min-width: 0; font: inherit; color: var(--text);
+    background: #14110c; border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
+  #board input[type=text]:focus { outline: none; border-color: var(--accent); }
+  #board .actions { display: flex; gap: 6px; }
+  #board .actions button { flex: 1 1 auto; }
+  canvas { height: calc(100vh - 32px); width: auto; display: block; background: #b9cfe0;
+    border-radius: 6px; touch-action: manipulation; cursor: pointer; }
+  #panel { flex: 1 1 auto; min-width: 280px; max-width: 420px; overflow-y: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+  h1 { font-size: 13px; margin: 0 0 4px; letter-spacing: .08em; text-transform: uppercase; }
+  p.hint { color: var(--dim); margin: 0 0 14px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin-bottom: 10px; }
+  .row label { color: var(--dim); }
+  .row output { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .row input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+  button { font: inherit; color: var(--text); background: #2b241a; border: 1px solid var(--line);
+    border-radius: 4px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  #dump { width: 100%; height: 150px; margin-top: 8px; background: #14110c; color: var(--dim);
+    border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: inherit; resize: vertical; }
+  #stats { color: var(--dim); }
+  #stats b { color: var(--text); font-weight: normal; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="board" aria-live="polite">
+    <h2>排行榜</h2>
+    <p id="mine" class="you"></p>
+    <ol id="list"></ol>
+    <form id="submit-form" autocomplete="off">
+      <input type="text" id="who" maxlength="16" placeholder="名字（最多 16 字）" aria-label="名字">
+      <button type="submit" id="send">记入</button>
+    </form>
+    <div class="actions">
+      <button type="button" id="again">再来一局</button>
+    </div>
+  </div>
+</div>
+<div id="panel">
+  <h1>Haide M0</h1>
+  <p class="hint">空格 / 点击起跳。参数实时生效，调到手感对了就按「导出参数」。</p>
+  <div id="sliders"></div>
+  <hr>
+  <div class="row"><label><input type="checkbox" id="showHit"> 显示碰撞盒</label></div>
+  <div class="row"><label><input type="checkbox" id="smooth" checked> 平滑缩放（A 方案）</label></div>
+  <hr>
+  <div id="stats"></div>
+  <hr>
+  <button id="reset">恢复默认</button>
+  <button id="copy">导出参数</button>
+  <textarea id="dump" readonly></textarea>
+</div>
+<script type="module">
+// Physics runs in 360x640 logical units. The canvas is manifest.renderScale
+// times that, so every tuned number below survives a change of asset scale.
+const LOGICAL_W = 360, LOGICAL_H = 640;
+const STEP = 1 / 60;                       // fixed timestep: same feel at any refresh rate
+
+const DEFAULTS = {
+  gravity: 1500,          // px/s^2
+  jump: 450,              // upward impulse, px/s
+  terminal: 700,          // downward speed cap, stops the death dive running away
+  scroll: 150,            // px/s
+  gap: 150,               // vertical opening between the two posts
+  spacing: 230,           // horizontal distance between pairs
+  leadIn: 240,            // where the first post stands at t=0, so the run has a start
+  hitInset: 12,           // % inset on the character's body box
+  jumpBuffer: 80,         // ms of input remembered before it can be applied
+  tiltUp: -20, tiltDown: 70,
+  flapMs: 90,             // ms per wing frame
+};
+const P = { ...DEFAULTS };
+
+const SPECS = [
+  ['gravity', 400, 3000, 10, '重力'],
+  ['jump', 150, 900, 5, '起跳冲量'],
+  ['terminal', 300, 1400, 10, '下落终端速度'],
+  ['scroll', 60, 320, 5, '卷轴速度'],
+  ['gap', 80, 260, 2, '缝隙高度'],
+  ['spacing', 140, 400, 5, '障碍间距'],
+  ['leadIn', 120, 900, 10, '首根柱子位置'],
+  ['hitInset', 0, 30, 1, '碰撞盒内缩 %'],
+  ['jumpBuffer', 0, 200, 10, '输入缓存 ms'],
+  ['flapMs', 40, 220, 5, '振翅帧间隔 ms'],
+];
+
+const base = new URL('../assets/', import.meta.url);
+const M = await (await fetch(new URL('manifest.json', base))).json();
+const R = M.renderScale;
+const img = async (f) => {
+  const i = new Image();
+  i.src = new URL(f, base).href;
+  await i.decode();
+  return i;
+};
+const layers = [];
+for (const L of M.layers) layers.push({ ...L, img: await img(L.id + '.png') });
+const ground = layers.pop();
+const cap = await img('obstacle-cap.png');
+const body = await img('obstacle-body.png');
+const dog = await img(M.haide.sheet);
+const FW = M.haide.frameWidth, FH = M.haide.frameHeight;
+
+const cv = document.getElementById('c');
+cv.width = M.playArea.w; cv.height = M.playArea.h;
+const ctx = cv.getContext('2d');
+
+// Sky is drawn, not shipped: sample the key art's stepped bands once.
+const skyBands = await (async () => {
+  const k = await img('../source/keyart.png');
+  const t = document.createElement('canvas');
+  t.width = 1; t.height = LOGICAL_H;
+  const tc = t.getContext('2d');
+  tc.drawImage(k, Math.round(k.width * 0.02), 0, 1, k.height, 0, 0, 1, LOGICAL_H);
+  const d = tc.getImageData(0, 0, 1, LOGICAL_H).data;
+  const rows = [];
+  const horizon = Math.round(LOGICAL_H * 0.63);
+  for (let y = 0; y < LOGICAL_H; y++) {
+    const s = Math.min(y, horizon) * 4;
+    rows.push(`rgb(${d[s]},${d[s + 1]},${d[s + 2]})`);
+  }
+  return rows;
+})();
+
+const S = {
+  mode: 'ready', t: 0, acc: 0, last: 0,
+  y: LOGICAL_H * 0.4, vy: 0, scrolled: 0,
+  score: 0, best: +(localStorage.getItem('haide-best') || 0),
+  buffered: -1, flapT: 0, deaths: 0, runStart: 0, runTimes: [],
+};
+const spawnX = M.haide.spawnX / R;
+const groundY = ground.y / R;
+const capW = cap.width / R, capH = cap.height / R;
+
+const SPAWN_Y = LOGICAL_H * 0.4;
+
+// Obstacles are indexed from 0 and the first one stands at P.leadIn, so the
+// player gets a stretch of empty field instead of a post in the face at t=0.
+const obstacleX = (n) => P.leadIn + n * P.spacing - S.scrolled;
+const firstIndex = () => Math.max(0, Math.floor((S.scrolled - P.leadIn - capW) / P.spacing));
+
+const gapCenter = (n) => {
+  const margin = P.gap / 2 + 30;
+  const raw = 210 + 90 * Math.sin(n * 1.7) + 40 * Math.sin(n * 0.6);
+  // Gap 0 sits exactly at the spawn height so the opening run is coastable,
+  // then the variation eases in over the next few posts.
+  const ease = Math.min(1, n / 3);
+  return Math.max(margin, Math.min(groundY - margin, SPAWN_Y * (1 - ease) + raw * ease));
+};
+
+function reset(hard) {
+  if (hard) { S.score = 0; S.deaths = 0; S.runTimes = []; }
+  S.mode = 'ready'; S.y = SPAWN_Y; S.vy = 0; S.scrolled = 0; S.score = 0; S.buffered = -1;
+  S.passed = new Set();
+}
+function flap() {
+  if (S.mode === 'dying') return;                 // no flapping on the way down
+  if (board.classList.contains('open')) return;   // the leaderboard owns input
+  if (S.mode === 'gameover') { reset(false); return; }
+  if (S.mode === 'ready') { S.mode = 'playing'; S.runStart = performance.now(); }
+  S.buffered = performance.now();
+}
+
+function hitBox() {
+  const f = P.hitInset / 100;
+  const w = FW / R, h = FH / R;
+  return { w: w * (1 - 2 * f), h: h * (1 - 2 * f) };
+}
+
+function step() {
+  if (S.mode !== 'playing' && S.mode !== 'dying') return;
+  if (S.mode === 'playing') {
+    if (S.buffered >= 0 && performance.now() - S.buffered <= P.jumpBuffer) {
+      S.vy = -P.jump; S.buffered = -1;
+    }
+    S.scrolled += P.scroll * STEP;
+  }
+  S.vy = Math.min(P.terminal, S.vy + P.gravity * STEP);
+  S.y += S.vy * STEP;
+
+  const hb = hitBox();
+  if (S.y + hb.h / 2 >= groundY) { S.y = groundY - hb.h / 2; die(true); return; }
+  if (S.y - hb.h / 2 < 0) { S.y = hb.h / 2; S.vy = 0; }
+  if (S.mode !== 'playing') return;
+
+  const from = firstIndex();
+  for (let n = from; n < from + 6; n++) {
+    const x = obstacleX(n);
+    const gc = gapCenter(n);
+    // one rect at cap width for the whole column, per the agreed collision rule
+    const overlapX = x < spawnX + hb.w / 2 && x + capW > spawnX - hb.w / 2;
+    if (overlapX && (S.y - hb.h / 2 < gc - P.gap / 2 || S.y + hb.h / 2 > gc + P.gap / 2)) { die(false); return; }
+    if (x + capW < spawnX - hb.w / 2 && !S.passed?.has(n)) {
+      (S.passed ||= new Set()).add(n); S.score++;
+    }
+  }
+}
+// Two stages: hitting a post starts a fall, hitting the ground ends the run.
+// Only the first of the two counts as the death.
+function die(onGround) {
+  if (S.mode === 'gameover') return;
+  if (S.mode !== 'dying') {
+    S.deaths++;
+    if (S.runStart) S.runTimes.push((performance.now() - S.runStart) / 1000);
+    if (S.score > S.best) { S.best = S.score; localStorage.setItem('haide-best', S.best); }
+  }
+  S.mode = onGround ? 'gameover' : 'dying';
+  if (onGround) openBoard(S.score);
+}
+
+// --- leaderboard ----------------------------------------------------------
+// The API lives on the same origin as the prototype server. It is a JSON file
+// on disk today; the client does not care where the rows come from.
+const board = document.getElementById('board');
+const listEl = document.getElementById('list');
+const mineEl = document.getElementById('mine');
+const whoEl = document.getElementById('who');
+const sendEl = document.getElementById('send');
+const formEl = document.getElementById('submit-form');
+const esc = (s) => s.replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+let pending = null;   // the run waiting to be submitted, or null once handled
+
+function renderBoard(top, myRank) {
+  if (!top.length) {
+    listEl.innerHTML = '<li class="empty">还没有人上榜。</li>';
+    return;
+  }
+  listEl.innerHTML = top.map((r) =>
+    `<li class="${r.rank === myRank ? 'me' : ''}"><span class="n">${r.rank}</span>` +
+    `<span>${esc(r.name)}</span><span class="s">${r.score}</span></li>`).join('');
+  const me = listEl.querySelector('.me');
+  if (me) me.scrollIntoView({ block: 'nearest' });
+}
+
+async function loadBoard(myRank) {
+  try {
+    const r = await fetch('/api/scores');
+    if (!r.ok) throw new Error(r.status);
+    renderBoard((await r.json()).top, myRank);
+  } catch {
+    listEl.innerHTML = '<li class="err">连不上排行榜服务器。' +
+      '用 <code>node tools/game-art/prototype/server.mjs</code> 启动。</li>';
+  }
+}
+
+function openBoard(score) {
+  pending = { score, durationMs: S.runStart ? performance.now() - S.runStart : 0 };
+  mineEl.textContent = `本局 ${score} 分`;
+  whoEl.value = localStorage.getItem('haide-name') || '';
+  whoEl.disabled = false;
+  sendEl.disabled = false;
+  sendEl.textContent = '记入';
+  board.classList.add('open');
+  loadBoard(null);
+  whoEl.focus();
+}
+
+formEl.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!pending) return;
+  const name = whoEl.value.trim();
+  if (!name) { whoEl.focus(); return; }
+  const myScore = pending.score;
+  localStorage.setItem('haide-name', name);
+  sendEl.disabled = true;
+  sendEl.textContent = '提交中…';
+  try {
+    const r = await fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name, score: pending.score, durationMs: Math.round(pending.durationMs), physics: P,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.status);
+    pending = null;
+    whoEl.disabled = true;
+    sendEl.textContent = '已记入';
+    mineEl.textContent = data.yourRank
+      ? `本局 ${myScore} 分　·　第 ${data.yourRank} 名（共 ${data.total} 条）`
+      : `本局 ${myScore} 分　·　未进前 ${data.top.length}`;
+    renderBoard(data.top, data.yourRank);
+  } catch (err) {
+    sendEl.disabled = false;
+    sendEl.textContent = '重试';
+    mineEl.textContent = `提交失败：${err.message}`;
+  }
+});
+
+document.getElementById('again').addEventListener('click', (e) => {
+  board.classList.remove('open');
+  pending = null;
+  reset(false);
+  // Leave focus on the button and the next Space press re-clicks it instead of
+  // reaching the game.
+  e.currentTarget.blur();
+});
+
+function drawColumn(x, topEnd, botStart) {
+  const bw = body.width / R, bh = body.height / R;
+  const sx = x + (capW - bw) / 2;
+  for (let y = topEnd - capH + 2; y > -bh; y -= bh) ctx.drawImage(body, sx * R, y * R, bw * R, bh * R);
+  ctx.save();
+  ctx.translate((x + capW / 2) * R, (topEnd - capH / 2) * R);
+  ctx.scale(1, -1);
+  ctx.drawImage(cap, -capW * R / 2, -capH * R / 2, capW * R, capH * R);
+  ctx.restore();
+  ctx.drawImage(cap, x * R, botStart * R, capW * R, capH * R);
+  for (let y = botStart + capH - 2; y < groundY; y += bh) ctx.drawImage(body, sx * R, y * R, bw * R, bh * R);
+}
+
+function render() {
+  for (let y = 0; y < LOGICAL_H; y++) { ctx.fillStyle = skyBands[y]; ctx.fillRect(0, y * R, cv.width, R); }
+  for (const L of layers) {
+    const off = Math.round(S.scrolled * L.speed * R) % L.img.width;
+    for (let x = -off; x < cv.width; x += L.img.width) ctx.drawImage(L.img, x, L.y);
+  }
+  const from = firstIndex();
+  for (let n = from; n < from + 6; n++) {
+    const x = obstacleX(n);
+    if (x > LOGICAL_W || x < -capW) continue;
+    const gc = gapCenter(n);
+    drawColumn(x, gc - P.gap / 2, gc + P.gap / 2);
+  }
+  const goff = Math.round(S.scrolled * R) % ground.img.width;
+  for (let x = -goff; x < cv.width; x += ground.img.width) ctx.drawImage(ground.img, x, ground.y);
+
+  const tilt = Math.max(P.tiltUp, Math.min(P.tiltDown, (S.vy / P.terminal) * P.tiltDown));
+  const frame = S.mode === 'playing'
+    ? [0, 1, 2, 1][Math.floor(S.t / (P.flapMs / 1000)) % 4]
+    : S.mode === 'dying' || S.mode === 'gameover' ? (M.haide.deadFrame ?? 1) : 1;
+  ctx.save();
+  ctx.translate(spawnX * R, S.y * R);
+  ctx.rotate((tilt * Math.PI) / 180);
+  ctx.drawImage(dog, frame * FW, 0, FW, FH, -FW / 2, -FH / 2, FW, FH);
+  ctx.restore();
+
+  if (document.getElementById('showHit').checked) {
+    const hb = hitBox();
+    ctx.strokeStyle = '#ff2d55'; ctx.lineWidth = 2 * R;
+    ctx.strokeRect((spawnX - hb.w / 2) * R, (S.y - hb.h / 2) * R, hb.w * R, hb.h * R);
+    for (let n = from; n < from + 6; n++) {
+      const x = obstacleX(n);
+      if (x > LOGICAL_W || x < -capW) continue;
+      const gc = gapCenter(n);
+      ctx.strokeRect(x * R, 0, capW * R, (gc - P.gap / 2) * R);
+      ctx.strokeRect(x * R, (gc + P.gap / 2) * R, capW * R, (groundY - gc - P.gap / 2) * R);
+    }
+  }
+
+  ctx.font = `700 ${18 * R}px ui-monospace, monospace`;
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 5 * R; ctx.strokeStyle = '#3d2a12'; ctx.fillStyle = '#fff';
+  const label = S.mode === 'ready' ? '按空格开始'
+    : S.mode === 'gameover' ? `${S.score}　·　按空格重来`
+    : String(S.score);
+  ctx.strokeText(label, cv.width / 2, 70 * R);
+  ctx.fillText(label, cv.width / 2, 70 * R);
+}
+
+function loop(now) {
+  if (!S.last) S.last = now;
+  S.acc += Math.min(0.25, (now - S.last) / 1000);
+  S.last = now;
+  while (S.acc >= STEP) { step(); S.acc -= STEP; S.t += STEP; }
+  render();
+  const avg = S.runTimes.length ? (S.runTimes.reduce((a, b) => a + b) / S.runTimes.length).toFixed(1) : '—';
+  document.getElementById('stats').innerHTML =
+    `分数 <b>${S.score}</b>　最高 <b>${S.best}</b><br>` +
+    `死亡 <b>${S.deaths}</b> 次　平均存活 <b>${avg}</b> 秒<br>` +
+    `vy <b>${S.vy.toFixed(0)}</b>　倾角 <b>${Math.max(P.tiltUp, Math.min(P.tiltDown, (S.vy / P.terminal) * P.tiltDown)).toFixed(0)}°</b>`;
+  requestAnimationFrame(loop);
+}
+
+// --- controls -------------------------------------------------------------
+const sliders = document.getElementById('sliders');
+for (const [k, min, max, stepv, label] of SPECS) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<label for="s-${k}">${label}</label><output id="o-${k}">${P[k]}</output>
+    <input id="s-${k}" type="range" min="${min}" max="${max}" step="${stepv}" value="${P[k]}">`;
+  sliders.appendChild(row);
+  row.querySelector('input').addEventListener('input', (e) => {
+    P[k] = +e.target.value;
+    document.getElementById('o-' + k).textContent = P[k];
+  });
+}
+document.getElementById('reset').onclick = () => {
+  Object.assign(P, DEFAULTS);
+  for (const [k] of SPECS) {
+    document.getElementById('s-' + k).value = P[k];
+    document.getElementById('o-' + k).textContent = P[k];
+  }
+};
+document.getElementById('copy').onclick = () => {
+  const out = `// tuned in M0, ${new Date().toISOString().slice(0, 10)}\n`
+    + `// units: 360x640 logical space, px and px/s\n`
+    + `export const PHYSICS = ${JSON.stringify(P, null, 2)};\n`;
+  document.getElementById('dump').value = out;
+  navigator.clipboard?.writeText(out);
+};
+document.getElementById('smooth').onchange = (e) => {
+  ctx.imageSmoothingEnabled = e.target.checked;
+  cv.style.imageRendering = e.target.checked ? 'auto' : 'pixelated';
+};
+ctx.imageSmoothingEnabled = true;
+
+addEventListener('keydown', (e) => {
+  // Typing a name must not fly the dog, and Space must not re-trigger a button.
+  const t = e.target;
+  if (t instanceof HTMLInputElement || t instanceof HTMLButtonElement ||
+      t instanceof HTMLTextAreaElement) return;
+  // Some synthetic and IME key paths leave `code` empty, so check all three.
+  const isSpace = e.code === 'Space' || e.key === ' ' || e.keyCode === 32;
+  const isR = e.code === 'KeyR' || e.key === 'r' || e.key === 'R';
+  if (isSpace) { e.preventDefault(); flap(); }
+  if (isR) reset(true);
+});
+cv.addEventListener('pointerdown', (e) => { e.preventDefault(); flap(); });
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

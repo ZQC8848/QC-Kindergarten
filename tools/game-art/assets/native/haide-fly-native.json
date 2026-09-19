@@ -1,0 +1,30 @@
+{
+  "sheet": "haide-fly-native.png",
+  "frameWidth": 571,
+  "frameHeight": 455,
+  "frames": 3,
+  "order": [
+    "wings-up",
+    "wings-level",
+    "wings-down"
+  ],
+  "playback": "ping-pong 0,1,2,1",
+  "bodyBox": {
+    "x": 21,
+    "y": 26,
+    "w": 543,
+    "h": 428
+  },
+  "hitBox": {
+    "x": 86,
+    "y": 77,
+    "w": 413,
+    "h": 325
+  },
+  "hitBoxNormalised": {
+    "x": 0.1506,
+    "y": 0.1692,
+    "w": 0.7233,
+    "h": 0.7143
+  }
+}

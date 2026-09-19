@@ -1,0 +1,103 @@
+{
+  "renderScale": 3,
+  "playArea": {
+    "w": 1080,
+    "h": 1920
+  },
+  "physicsUnits": {
+    "w": 360,
+    "h": 640
+  },
+  "scrollPxPerSecond": 450,
+  "layers": [
+    {
+      "id": "L1-clouds",
+      "tile": [
+        2160,
+        344
+      ],
+      "y": 180,
+      "speed": 0.08,
+      "loopSeconds": 60
+    },
+    {
+      "id": "L2-treeline",
+      "tile": [
+        1377,
+        160
+      ],
+      "y": 1130,
+      "speed": 0.2,
+      "loopSeconds": 15.3
+    },
+    {
+      "id": "L3-pergola",
+      "tile": [
+        957,
+        333
+      ],
+      "y": 1251,
+      "speed": 0.4,
+      "loopSeconds": 5.32
+    },
+    {
+      "id": "L4-hedge",
+      "tile": [
+        1080,
+        122
+      ],
+      "y": 1462,
+      "speed": 0.7,
+      "loopSeconds": 3.43
+    },
+    {
+      "id": "L6-ground",
+      "tile": [
+        734,
+        336
+      ],
+      "y": 1584,
+      "speed": 1,
+      "loopSeconds": 1.63
+    }
+  ],
+  "obstacle": {
+    "cap": [
+      216,
+      54
+    ],
+    "body": [
+      192,
+      48
+    ],
+    "collision": "one rect at cap width, full column height",
+    "gap": 450,
+    "spacing": 690
+  },
+  "haide": {
+    "sheet": "haide-fly.png",
+    "frameWidth": 120,
+    "frameHeight": 96,
+    "frames": 4,
+    "order": [
+      "wings-up",
+      "wings-level",
+      "wings-down",
+      "dead"
+    ],
+    "playback": "ping-pong 0,1,2,1 while flying; hold frame 3 on death",
+    "deadFrame": 3,
+    "hitBox": {
+      "x": 16,
+      "y": 14,
+      "w": 89,
+      "h": 71
+    },
+    "nativeCell": [
+      571,
+      455
+    ],
+    "spawnX": 288,
+    "still": "haide-card.png"
+  }
+}
