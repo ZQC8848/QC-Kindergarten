@@ -32,6 +32,10 @@ export const characters = [
   // lighter and pinker than his reference: nearest is Lukos at 16.3. hoverCell 8: losing
   // at chess and crying is the most him thing he does.
   { slug: 'qunzhu', folder: '群主-esfp', accent: '#A99CE0', hoverCell: 8, en: { name: 'Qunzhu' } },
+  // Old-tea yellow-brown: the name says yellow, but bright yellow is Fortuno's and gold is
+  // Mushi's (19.8), so it is pushed down to aged brass; brown was an empty zone. hoverCell 3:
+  // nobody has ever seen him angry.
+  { slug: 'laohuang', folder: '老黄-entj', accent: '#8C6A2E', hoverCell: 3, en: { name: 'Laohuang' } },
   {
     slug: 'qc',
     folder: 'QC-entp',

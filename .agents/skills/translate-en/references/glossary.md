@@ -24,6 +24,7 @@ Display names come from `website/src/data/characters.config.mjs` (`en.name`). Lo
 | 明 | Ming | ming | *pending* |
 | Fortuno | Fortuno | fortuno | Already a Latin-alphabet name; unchanged. |
 | 群主 | Qunzhu | qunzhu | Pinyin. Glossed once in his bible as "master of the shoal". *pending* |
+| 老黄 | Laohuang | laohuang | Pinyin, glossed once as "Old Huang". *pending* |
 | 兔兔 | Bun-bun | | Ruanruan's plush rabbit, when she names it. "The bunny" in narration. |
 
 ## Titles and roles
@@ -64,6 +65,10 @@ Display names come from `website/src/data/characters.config.mjs` (`en.name`). Lo
 | 《论语》 / 抄十遍 | the Analects / copy out ten times | Qunzhu's curse. *pending* |
 | 卒 / 象棋 | the pawn / Chinese chess | Qunzhu's piece. Never print the character on /en/ pages; say "carved with the pawn character". *pending* |
 | 鲨鱼人 | shark-boy | Qunzhu after evolving. "Shark-man" sounds adult; he's a kid. *pending* |
+| 王老吉 | Wong Lo Kat | The brand's own English name. "Cooling tea" when generic. *pending* |
+| 依弟 / 依妹 | little brother / little sister | Laohuang's Fuzhou way of addressing everyone. *pending* |
+| 盖碗 | gaiwan | Laohuang's. *pending* |
+| 别上火 | keep your cool | Pairs with "cooling tea". *pending* |
 
 ## Story and world terms
 

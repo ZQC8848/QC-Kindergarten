@@ -72,7 +72,7 @@ const sectionId = (i: number) => `s-${i}`;
           <span class="chip">{c.mbti}</span>{' '}
           <span class="mbti-label">
             {bible.mbtiLabel
-              .replace(/^[A-Z]{4}/, '')
+              .replace(/^[A-Z]{4}(-[AT])?/, '')
               .trim()
               .replace(/^[（(]|[)）]$/g, '')}
           </span>

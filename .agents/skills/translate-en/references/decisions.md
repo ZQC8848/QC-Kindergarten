@@ -13,6 +13,18 @@ Format per run:
 
 Keep the "为什么" column short: what the Chinese does, what the English does to match. "其他方案" lists the real alternatives considered with one clause on why each lost.
 
+## 2026-10-13 — new character: Laohuang
+
+| 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
+|---|---|---|---|---|---|
+| 老黄 | Laohuang, "Old Huang" | 名字保留拼音，第一次出现时注一次"Old Huang"，"全园最小的却叫老"这个反差才成立。 | Old Huang（意译成名字，丢掉人名感） | 老黄 bible、config | pending |
+| 依弟 / 依妹 | little brother / little sister | 福州话称呼。英文页不能出现汉字，罗马拼写读者看不懂，所以意译，再用一句"the way old men do in Fuzhou"交代出处。 | 保留罗马拼写 Ī-dâi（读者不认识，笑点落空） | 老黄 bible ×5 | pending |
+| 王老吉 | Wong Lo Kat | 品牌自己的英文名。通称时用 cooling tea。 | Wanglaoji（拼音，不是品牌官方写法） | 老黄 bible ×8 | pending |
+| 别上火，来一罐 / 不上火 | Keep your cool. Have a can. / never loses his cool | "上火"既是中医的热气也是发火，英文 cooling tea 加 keep your cool 刚好也是一语双关。 | Don't get heated（只剩一层意思） | 老黄 bible ×4 | pending |
+| 方案 → "荒案" | fang'an → huang'an, "a ridiculous plan" | f/h 不分的同音梗英文无法重现，只能用拼音加一句解释。笑点变弱，但事实保住了。 | 换成英文双关 scheme/scam（不是口音，和福州无关） | 老黄 bible ×1 | pending |
+| 七溜八溜，不离福州 / 不离老黄 | Wander seven ways or eight, you never leave Fuzhou / you still end up at Laohuang's | 保留数字的节奏，改写版沿用同一句式。 | All roads lead to Laohuang（太像罗马那句，丢掉福州出处） | 老黄 bible ×3 | pending |
+| 凉茶也是茶 | Cooling tea is still tea. | 他的歪理，一句话。 | — | 老黄 bible ×2 | pending |
+
 ## 2026-10-13 — side story: Selling Crutches
 
 | 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
