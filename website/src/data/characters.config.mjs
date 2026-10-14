@@ -83,5 +83,6 @@ export const scenes = [
   { file: 'EntryLobby', slug: 'entry-lobby', zh: '门厅', en: 'Entry lobby' },
   { file: 'HighwayNight', slug: 'highway-night', zh: '午夜高速', en: 'Highway at night' },
   { file: 'PrivateVillaPool', slug: 'villa-pool', zh: '私人别墅泳池', en: 'Private villa pool' },
+  { file: 'Roadside', slug: 'roadside', zh: '路边', en: 'Roadside' },
   { file: 'Kindergarten-Map', slug: 'map', zh: '平面图', en: 'Floor plan' },
 ];

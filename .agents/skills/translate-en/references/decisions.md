@@ -13,6 +13,17 @@ Format per run:
 
 Keep the "为什么" column short: what the Chinese does, what the English does to match. "其他方案" lists the real alternatives considered with one clause on why each lost.
 
+## 2026-10-13 — side story: Selling Crutches
+
+| 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
+|---|---|---|---|---|---|
+| 卖拐 | Selling Crutches | 原作小品没有通行英文名，按字面直译，framing 里写明出处。 | The Crutch Con（点破骗局，剧透） | 标题、framing | pending |
+| 〔舞台提示〕 | [stage direction] | 英文页不能出现 CJK 标点，〔〕换成方括号。 | — | 全篇 | pending |
+| 超棒的主意！ | GREAT idea! | 沿用 Fufu 英文 bible 已有的口头禅写法。 | Super great idea!（和 bible 不一致） | 正文 ×1；顺带修正 Fortuno bible ×1 | pending |
+| 心里清楚 / 脑子还不知道 | Deep down he knows / Your brain just hasn't caught up | 骗术的关键是"你心里知道"，英文用 deep down 承接，Fufu 那句反转落在 brain 上。 | in your heart（太抒情） | 正文 ×3 | pending |
+| 心里先瘸了，腿就跟着瘸 | Once the mind limps, the leg follows. | 保留"瘸"在心和腿上的双关。 | He limps because he believes it（解释了笑点） | 正文 ×1 | pending |
+| 早拄早好 / 晚拄，就得拄一辈子 | The sooner you start, the sooner you're better / Start late, and it's crutches for life | 中文是一对押韵的推销话术，英文用 start 串起两句保持对仗。 | — | 正文 ×2 | pending |
+
 ## 2026-10-13 — new character: Qunzhu
 
 | 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
