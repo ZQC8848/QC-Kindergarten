@@ -88,5 +88,6 @@ export const scenes = [
   { file: 'HighwayNight', slug: 'highway-night', zh: '午夜高速', en: 'Highway at night' },
   { file: 'PrivateVillaPool', slug: 'villa-pool', zh: '私人别墅泳池', en: 'Private villa pool' },
   { file: 'Roadside', slug: 'roadside', zh: '路边', en: 'Roadside' },
+  { file: 'WinterStreetNight', slug: 'winter-street', zh: '冬夜街道', en: 'Winter street at night' },
   { file: 'Kindergarten-Map', slug: 'map', zh: '平面图', en: 'Floor plan' },
 ];
