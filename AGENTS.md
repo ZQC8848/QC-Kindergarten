@@ -4,7 +4,7 @@
 
 ## 目录
 
-- `character reference/` — 14 个角色，每人一个文件夹：参考图、三视图、表情表、`性格设定.md`（中文 bible）与 `性格设定.en.md`。生成脚本在 `_tools/`，客串角色在 `_guests/`（不上网站）。
+- `character reference/` — 15 个角色，每人一个文件夹：参考图、三视图、表情表、`性格设定.md`（中文 bible）与 `性格设定.en.md`。生成脚本在 `_tools/`，客串角色在 `_guests/`（不上网站）。
 - `stories/` — 情景喜剧故事，跨人物事件的唯一正式来源。规则见 `stories/README.md`。
 - `Scene Reference/` — 场景参考图，故事的 `location` 与网站地点页都引用它。
 - `website/` — Astro 双语站，构建时从上面三个目录同步内容。跑法见 `website/README.md`。

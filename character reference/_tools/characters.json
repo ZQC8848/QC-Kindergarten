@@ -104,6 +104,13 @@
       "description": "A bright, charming, sociable chibi boy who hosts every class event. Tousled, fluffy chestnut-brown yarn hair with a swept fringe. Large warm brown eyes with a vermilion-orange gradient, bright open-mouth smile, light blush. Outfit: a cream-white long-sleeved shirt with fine knit texture and a vermilion-red bow tie; vermilion-red suspenders with small brass buckles, with a tiny silver crescent-moon pin clipped to the left suspender strap; cream moon-white knee-length shorts with turned-up cuffs; white ribbed knee socks; vermilion-and-cream lace-up ankle boots with cream laces.",
       "props": "a round vermilion-red paper lantern carried on a short bamboo stick, with a crescent moon cut out of its side that glows moon-white and a thin teal paper lining visible inside, and a red tassel with a teal bead hanging below; a silver crescent-moon pin on the suspender",
       "turnaround_note": "Keep the silver crescent-moon pin on the left suspender strap in the front and three-quarter views. Hands empty, no lantern."
+    },
+    "Fortuno-enfp": {
+      "name": "Fortuno",
+      "mbti": "ENFP",
+      "description": "A bouncy, warm, eager chibi boy, the luckiest kid in the kindergarten. Short, round, springy curly yarn hair in warm chestnut-brown, forming a fluffy curly mop. Large clear sky-blue eyes with a lighter gradient, a huge delighted grin with one front tooth missing, light blush. Outfit: a short lemon-yellow (#D8D23A, a slightly greenish lemon yellow, not golden) felt hooded coat with wooden toggle buttons and two flap pockets, hood down; a small green four-leaf clover pin on the chest; a cream henley T-shirt; cream knee-length shorts with turned-up cuffs; cream ribbed socks; lemon-yellow rubber rain boots.",
+      "props": "a small gold coin that always lands heads; a small dented, paint-chipped lemon-yellow toy watering can; a green four-leaf clover pin on the coat",
+      "turnaround_note": "Keep the four-leaf clover pin on the coat in the front and three-quarter views. Hands empty, no coin and no watering can."
     }
   }
 }

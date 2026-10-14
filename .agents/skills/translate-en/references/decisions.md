@@ -13,6 +13,19 @@ Format per run:
 
 Keep the "为什么" column short: what the Chinese does, what the English does to match. "其他方案" lists the real alternatives considered with one clause on why each lost.
 
+## 2026-10-13 — new character: Fortuno
+
+| 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
+|---|---|---|---|---|---|
+| 小锦鲤型 | little-lucky-charm type | "锦鲤"在中文网络里指好运的化身，英文读者不认识这个用法。lucky charm 是英文里同功能的说法。 | little-koi type（字面，英文读不出"好运"） | Fortuno bible Basics | pending |
+| 全园的锦鲤 | The kindergarten's lucky charm | 同上，额外设定标题。 | the kindergarten's koi（同上） | Fortuno bible ×1 | pending |
+| 反正我运气好。 | "It's fine, I'm lucky." | 口头禅，"反正"的不在乎落在 It's fine 上。 | "I'm lucky anyway."（尾重，不像小孩随口说的） | Fortuno bible ×1 | pending |
+| 一起嘛！ | "Come on, together!" | "嘛"是撒娇式催促，Come on 承担这个语气。 | "Let's do it together!"（太完整，丢了黏人感） | Fortuno bible ×1 | pending |
+| 这三件 Whiskle 都讨厌 | Whiskle can't stand any of the three | 对应 Whiskle bible 讨厌列表里的被大声说话 / 被催 / 植物被踩，"它怎么还不长"就是催。英文 bible 讨厌列表用 hurried，这里不再重复解释。 | — | Fortuno bible、Whiskle bible | pending |
+| 蒙的 / 蒙对的算不算 | he guessed / Whether a lucky guess counts | "蒙"是瞎猜，英文 lucky guess 同时点到他的运气。 | he got lucky（太直接，丢掉"猜"） | Fortuno、Whiskle bible | pending |
+| 那页笔记只写了三个字："不可能。" | The page has one word on it: "Impossible." | 中文"三个字"指"不可能"的字数，英文一个词，数字跟着改。 | — | Fortuno bible ×1 | pending |
+| 三叶草……等里面长出一棵四片叶的 | waiting for the clover pot … to put up one with four leaves | 四叶草是三叶草的变异，不是能直接种出来的品种，等它长出来本身就是"好东西要慢慢来"。 | grow a four-leaf clover（字面，植物学上不对） | Whiskle bible ×1 | pending |
+
 ## 2026-10-13 — new characters: Jiuyue and Ming
 
 | 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |

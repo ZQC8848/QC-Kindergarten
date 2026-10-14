@@ -25,6 +25,9 @@ export const characters = [
   // hoverCell shows the side each hides: her rare smile, his rare shyness.
   { slug: 'jiuyue', folder: '九月-isfp', accent: '#2C7F7C', hoverCell: 1, en: { name: 'Jiuyue' } },
   { slug: 'ming', folder: '明-enfj', accent: '#C63D2C', hoverCell: 5, en: { name: 'Ming' } },
+  // Greenish lemon rather than gold so it stays off Mushi's (20.1) and clear of Whiskle's
+  // green (29.2). hoverCell 2: the one time he goes quiet, in front of a wilted plant.
+  { slug: 'fortuno', folder: 'Fortuno-enfp', accent: '#D8D23A', hoverCell: 2, en: { name: 'Fortuno' } },
   {
     slug: 'qc',
     folder: 'QC-entp',

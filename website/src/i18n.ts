@@ -4,7 +4,7 @@ export const langs: Lang[] = ['zh', 'en'];
 const zh = {
   siteName: 'QC Kindergarten',
   tagline: '如有雷同\n纯属故意',
-  intro: '以真实社交圈的性格为原型，AI 铸造的十四个角色和一部人设先行的情景喜剧。',
+  intro: '以真实社交圈的性格为原型，AI 铸造的十五个角色和一部人设先行的情景喜剧。',
   nav: { characters: '角色', stories: '故事', places: '环境', research: '研究', game: '小游戏' },
   hero: { alt: '庭院大树下的全员合照，每个人都在干自己的事', hint: '点击照片里的人' },
   charactersTitle: '角色',
@@ -91,7 +91,7 @@ type Dict = {
 const en: Dict = {
   siteName: 'QC Kindergarten',
   tagline: 'Any resemblance\nis intentional',
-  intro: 'Fourteen AI-forged characters modelled on a real social circle, and a character-first sitcom.',
+  intro: 'Fifteen AI-forged characters modelled on a real social circle, and a character-first sitcom.',
   nav: {
     characters: 'Characters',
     stories: 'Stories',
