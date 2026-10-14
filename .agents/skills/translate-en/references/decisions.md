@@ -13,6 +13,18 @@ Format per run:
 
 Keep the "为什么" column short: what the Chinese does, what the English does to match. "其他方案" lists the real alternatives considered with one clause on why each lost.
 
+## 2026-10-13 — new character: Qunzhu
+
+| 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
+|---|---|---|---|---|---|
+| 群主 | Qunzhu, "master of the shoal" | 名字保留拼音（同 Ruanruan、Dianer）。中文里"群主"是群聊管理员的梗，世界内的解释是"鱼群的老大"，英文只译世界内这层，聊天群的梗丢失。 | The Admin（保住网络梗，但世界内"鱼群"那层就没了，也不像名字）；Shoal Boss（意译成名字，丢掉人名感） | 群主 bible ×1、config | pending |
+| 小显眼包型 | little-show-off type | "显眼包"是网络用语，指爱出风头又有点傻气的人，show-off 是最近的说法。 | attention-seeker type（偏贬义） | 群主 bible Basics | pending |
+| 鲨鱼人 | shark-boy | "鲨鱼人"在英文里 shark-man 会读成成年人，和全员小孩的设定冲突。 | shark-man（年龄错）；shark-kid（太口语） | 群主 bible ×2 | pending |
+| 刻着"卒"的象棋子 | a chess piece carved with the pawn character | 英文页不能出现汉字。正文解释时补"in Chinese chess"，让"过河卒不能回头"在英文里成立。 | 写 "zu" 拼音（读者不认识） | 群主 bible ×2 | pending |
+| 整条鲨鱼都是酸的 | the whole shark goes sour | "酸"在中文里就是嫉妒，英文 sour 也能表达不爽，梗基本保住。 | goes green with envy（换了颜色，和淡紫鲨鱼打架） | 群主 bible ×1 | pending |
+| 再来一盘！ | "Again!" | 小孩输了要重来的口吻，一个词。 | "One more game!"（太完整） | 群主 bible ×2 | pending |
+| ……第几遍了？ | "…Which time is this?" | 抄到一半忘了数。 | "How many is that?"（意思对，少了"遍"的抄写感） | 群主 bible ×1 | pending |
+
 ## 2026-10-13 — new character: Fortuno
 
 | 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |

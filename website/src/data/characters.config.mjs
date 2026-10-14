@@ -28,6 +28,10 @@ export const characters = [
   // Greenish lemon rather than gold so it stays off Mushi's (20.1) and clear of Whiskle's
   // green (29.2). hoverCell 2: the one time he goes quiet, in front of a wilted plant.
   { slug: 'fortuno', folder: 'Fortuno-enfp', accent: '#D8D23A', hoverCell: 2, en: { name: 'Fortuno' } },
+  // The blue-violet zone is crowded (Lukos, Dianer, Haide, Mimi), so the shark is pushed
+  // lighter and pinker than his reference: nearest is Lukos at 16.3. hoverCell 8: losing
+  // at chess and crying is the most him thing he does.
+  { slug: 'qunzhu', folder: '群主-esfp', accent: '#A99CE0', hoverCell: 8, en: { name: 'Qunzhu' } },
   {
     slug: 'qc',
     folder: 'QC-entp',
