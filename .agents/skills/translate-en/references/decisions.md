@@ -13,6 +13,19 @@ Format per run:
 
 Keep the "为什么" column short: what the Chinese does, what the English does to match. "其他方案" lists the real alternatives considered with one clause on why each lost.
 
+## 2026-10-13 — new characters: Jiuyue and Ming
+
+| 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |
+|---|---|---|---|---|---|
+| 九月 | Jiuyue | 与 Ruanruan、Dianer 同一规则：名字就是名字，拼音保留。 | September（意译，丢失人名感，也和后面"九月 = 第九个月亮"的解释冲突） | 两份 bible、config | pending |
+| 明 = 日 + 月 | Ming = a sun + a moon / "His name is written with two pieces: a sun and a moon." | 英文页不能出现汉字（`audit_en.py --dist` 会报），所以把拆字写成一句描述，让后面"两个人名字里都有月亮"的梗还能成立。 | 保留汉字加注（审计不通过）；直接删掉拆字（整个额外设定失去支点） | 明 bible ×2 | pending |
+| 两个人的名字里都有一个"月" | Both their names have a moon in them. His is half moon; hers, Jiuyue, is September, written in Chinese as "the ninth moon". | 中文读者一眼看得出两个名字共享"月"字，英文读者看不出。补一个从句说明九月 = 第九个月亮，是这里唯一的加法，否则 Fufu 的"发现"没有内容。 | 不解释（笑点落空）；放到脚注（规则禁止脚注） | 明 bible ×1 | pending |
+| 秋水青 / 白露银 / 朱 / 月白 | autumn-water teal / White Dew silver / vermilion / moon-white | 白露是节气，英文通用译名是 White Dew；秋水保留字面意象。 | sea teal、frost silver（丢掉《蒹葭》和节气的出处） | 两份 bible Basics | pending |
+| 嗯。 | "Mm." | 九月的一个字回答。"Mm." 同样是一个音节、不表态。 | "Yeah."（太积极）；"Hm."（像在怀疑） | 九月 bible ×4，明 bible ×1 | pending |
+| 嗑她和明 | ships her with Ming | 网络用语"嗑 CP"对应英文的 ship，同样是粉丝圈说法。 | is rooting for them（太温和，丢掉起哄感） | 两份 bible | pending |
+| 报幕 / 主持人 | announce an act / MC | 幼儿园文艺活动语境，MC 比 host 更有"报幕"的舞台感。 | host（偏电视节目）；emcee（拼法生僻） | 明 bible | pending |
+| 场面话 | a perfectly smooth answer that contained nothing at all | 中文"场面话"是固定说法，英文没有对应词，按功能写成一句。 | diplomatic non-answer（太书面） | 明 bible ×1 | pending |
+
 ## 2026-09-09 — four-witches ending sync
 
 | 原文 | 译文 | 为什么 | 其他方案 | 出现位置 | 状态 |

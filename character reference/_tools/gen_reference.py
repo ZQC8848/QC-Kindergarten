@@ -82,7 +82,9 @@ def write_prompts() -> None:
                 "```",
                 "",
             ]
-        (folder / "prompts.md").write_text("\n".join(md), encoding="utf-8")
+        # newline="\n": on Windows text mode would write CRLF and every prompts.md would
+        # show as modified even though no prompt changed.
+        (folder / "prompts.md").write_text("\n".join(md), encoding="utf-8", newline="\n")
         print("wrote", folder / "prompts.md")
 
 

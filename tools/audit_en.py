@@ -7,7 +7,7 @@ Checks (no dependencies beyond Python 3):
   1. every character folder has 性格设定.en.md whose headings cover every Chinese section
   2. every story has <slug>.en.md with the same memory keys and illustration markers
   3. website/src/i18n.ts has the same keys under zh and en
-  4. with --dist (or when website/dist/en exists): no built /en/ page contains CJK text
+  4. with --dist (or when a build exists): no built /en/ page contains CJK text
 
 Exit code 1 when anything is missing.
 """
@@ -20,7 +20,16 @@ ROOT = Path(__file__).resolve().parents[1]
 CHAR_DIR = ROOT / 'character reference'
 STORIES = ROOT / 'stories'
 I18N = ROOT / 'website' / 'src' / 'i18n.ts'
-DIST_EN = ROOT / 'website' / 'dist' / 'en'
+# Where the built pages land depends on the build: plain `astro build` writes dist/, the
+# Vercel adapter writes dist/client and .vercel/output/static, and `vercel build` writes the
+# latter too. Several can exist at once, and a stale one is worse than none: taking the first
+# that existed once audited a leftover build from another branch instead of the fresh one.
+# So pick whichever was built most recently.
+_SITE = ROOT / 'website'
+_BUILDS = [_SITE / '.vercel' / 'output' / 'static', _SITE / 'dist' / 'client', _SITE / 'dist']
+_BUILT = [d for d in _BUILDS if (d / 'en' / 'index.html').is_file()]
+DIST = max(_BUILT, key=lambda d: (d / 'en' / 'index.html').stat().st_mtime) if _BUILT else _BUILDS[-1]
+DIST_EN = DIST / 'en'
 ALIAS_SRC = ROOT / 'website' / 'scripts' / 'parse.mjs'
 
 CJK = re.compile(r'[㐀-䶿一-鿿　-〿＀-￯]+')
@@ -190,12 +199,13 @@ def main():
                     if run not in ALLOWED_CJK and run not in found:
                         found.append(run)
             if found:
-                rel = page.relative_to(ROOT / 'website' / 'dist')
+                rel = page.relative_to(DIST)
                 sample = ' | '.join(found[:6])
                 more = f' … +{len(found) - 6}' if len(found) > 6 else ''
                 problems.append(f'[page] /{rel.as_posix()}: Chinese text remains: {sample}{more}')
     elif '--dist' in sys.argv:
-        problems.append('[page] website/dist/en not found; run `npx astro build` in website/ first')
+        problems.append('[page] no built /en/ pages found (looked in .vercel/output/static, dist/client, dist); '
+                        'run `npm run build` in website/ first')
 
     if problems:
         print('\n'.join(problems))

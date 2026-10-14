@@ -20,6 +20,8 @@ Display names come from `website/src/data/characters.config.mjs` (`en.name`). Lo
 | 陆姚 | Luyao | luyao | |
 | Liiie | Liiie | liiie | Three i's. |
 | QC | QC | qc | Always uppercase. |
+| 九月 | Jiuyue | jiuyue | Pinyin, like Ruanruan: the name is a name, not "September". *pending* |
+| 明 | Ming | ming | *pending* |
 | 兔兔 | Bun-bun | | Ruanruan's plush rabbit, when she names it. "The bunny" in narration. |
 
 ## Titles and roles
@@ -49,6 +51,10 @@ Display names come from `website/src/data/characters.config.mjs` (`en.name`). Lo
 | 麦当劳 | McDonald's | |
 | 军帽 / 大檐帽 | peaked cap | Luyao. |
 | 花衬衫 | the Hawaiian shirt | QC. |
+| 灯笼 | the lantern / the paper lantern | Ming's. *pending* |
+| 银杏叶 / 落叶画 | ginkgo leaf / leaf paintings | Jiuyue's. *pending* |
+| 报幕 | announce an act / MC | Ming. *pending* |
+| 嗑（CP） | ship | "Fufu ships them". *pending* |
 
 ## Story and world terms
 

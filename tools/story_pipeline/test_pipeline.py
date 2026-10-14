@@ -256,7 +256,7 @@ class StoryKnowledge(unittest.TestCase):
 
 
 class Brief(unittest.TestCase):
-    def test_all_twelve_characters_are_in_the_brief(self):
+    def test_every_main_character_is_in_the_brief(self):
         text = brief_mod.build(taste=False, slot='contradiction')
         for slug, _folder in brief_mod.load_roster():
             self.assertIn(f'slug `{slug}`', text)

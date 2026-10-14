@@ -90,6 +90,20 @@
       "description": "A laid-back, cool chibi boy on holiday. Thick, tousled indigo-blue yarn hair swept back with loose strands falling over the forehead. Large sharp deep-blue eyes with white highlights, one eyebrow slightly raised, a small confident smirk, light tan skin. Wears black rectangular sunglasses pushed down to the tip of the nose so both eyes show above the frames. Outfit: an open short-sleeved navy-blue Hawaiian shirt with white palm-tree and wave prints and rolled cuffs, bare chest showing; matching navy board shorts with white drawstring and palm-tree print; a silver chain necklace with a small white seashell pendant; a white-and-blue bead bracelet with a tiny shell on the right wrist; navy strap sandals with white soles.",
       "props": "black rectangular sunglasses worn low on the nose; silver seashell necklace; blue-and-white bead bracelet; tall glass of iced orange drink with an orange slice, mint leaves and a black straw",
       "turnaround_note": "Keep the sunglasses pushed down low on the nose in every view so the eyes are visible above them. Do NOT include the drink glass; hands empty."
+    },
+    "九月-isfp": {
+      "name": "九月",
+      "mbti": "ISFP",
+      "description": "A quiet, cool, artistic chibi girl. Ink-black yarn hair with a deep teal sheen and a side-swept fringe that falls over one eye, gathered into a loose, slightly messy low bun at the back of the head with a few loose strands; a slim wooden watercolour paintbrush with a teal-dipped tip is stuck through the bun, and the bun is tied with one thin vermilion-red cord whose ends dangle down. Large deep teal-green eyes with a lighter gradient, calm aloof half-lidded expression, small closed mouth, soft blush. Outfit: an oversized cream off-white textured painter's smock dress with long sleeves gathered at the wrists, reaching below the knees, with a small teal mandarin collar and one large front patch pocket; the smock is splashed and smudged with teal watercolour paint on the sleeves, pocket and hem; dark teal leggings with turned-up cuffs; grey-teal canvas slip-on shoes with cream soles. Teal paint stains on her fingertips.",
+      "props": "a golden ginkgo leaf with a tiny teal watercolour landscape painted on it; a small glass jar of teal-tinted brush water; several paintbrushes in the smock pocket; a wooden paintbrush stuck through the hair bun",
+      "turnaround_note": "Keep the paintbrush through the bun and the thin vermilion-red cord in every view; the low bun must be clearly readable in the side and back views. Hands empty, no leaf and no jar."
+    },
+    "明-enfj": {
+      "name": "明",
+      "mbti": "ENFJ",
+      "description": "A bright, charming, sociable chibi boy who hosts every class event. Tousled, fluffy chestnut-brown yarn hair with a swept fringe. Large warm brown eyes with a vermilion-orange gradient, bright open-mouth smile, light blush. Outfit: a cream-white long-sleeved shirt with fine knit texture and a vermilion-red bow tie; vermilion-red suspenders with small brass buckles, with a tiny silver crescent-moon pin clipped to the left suspender strap; cream moon-white knee-length shorts with turned-up cuffs; white ribbed knee socks; vermilion-and-cream lace-up ankle boots with cream laces.",
+      "props": "a round vermilion-red paper lantern carried on a short bamboo stick, with a crescent moon cut out of its side that glows moon-white and a thin teal paper lining visible inside, and a red tassel with a teal bead hanging below; a silver crescent-moon pin on the suspender",
+      "turnaround_note": "Keep the silver crescent-moon pin on the left suspender strap in the front and three-quarter views. Hands empty, no lantern."
     }
   }
 }

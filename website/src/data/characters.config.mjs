@@ -19,6 +19,12 @@ export const characters = [
   { slug: 'dianer', folder: '点儿-intp', accent: '#6E7B8B', hoverCell: 6, en: { name: 'Dianer' } },
   { slug: 'luyao', folder: '陆姚-entj', accent: '#2E2B33', hoverCell: 3, en: { name: 'Luyao' } },
   { slug: 'liiie', folder: 'Liiie-infj', accent: '#B5306A', hoverCell: 6, en: { name: 'Liiie' } },
+  // Jiuyue and Ming are a pair: near-complementary accents (CIEDE2000 50 apart), each
+  // carrying a trace of the other's. Teal and vermilion were the two empty zones on the
+  // cast's wheel; nearest existing accents are Whiskle (19.1) and Aisha (17.8).
+  // hoverCell shows the side each hides: her rare smile, his rare shyness.
+  { slug: 'jiuyue', folder: '九月-isfp', accent: '#2C7F7C', hoverCell: 1, en: { name: 'Jiuyue' } },
+  { slug: 'ming', folder: '明-enfj', accent: '#C63D2C', hoverCell: 5, en: { name: 'Ming' } },
   {
     slug: 'qc',
     folder: 'QC-entp',
